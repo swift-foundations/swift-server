@@ -44,14 +44,19 @@ extension Server {
 
 extension Server.Error {
     /// The HTTP status this error maps to.
-    public var status: Server.Status {
+    ///
+    /// L2 delta: RFC 9110 renamed 413 from "Payload Too Large" to "Content Too Large"
+    /// (`.contentTooLarge`) and 422 from "Unprocessable Entity" to "Unprocessable Content"
+    /// (`.unprocessableContent`) — the dissolved prototype's hand-rolled presets used the
+    /// obsoleted reason phrases; this adopts the spec-current ones (same codes).
+    public var status: HTTP.Status {
         switch self {
         case .notFound: .notFound
         case .badRequest: .badRequest
         case .unauthorized: .unauthorized
         case .forbidden: .forbidden
-        case .payloadTooLarge: .init(code: 413, reason: "Payload Too Large")
-        case .decoding: .unprocessableEntity
+        case .payloadTooLarge: .contentTooLarge
+        case .decoding: .unprocessableContent
         case .encoding: .internalServerError
         case .engine: .internalServerError
         case .unavailable: .serviceUnavailable

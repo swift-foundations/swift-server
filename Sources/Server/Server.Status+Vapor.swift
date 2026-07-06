@@ -12,11 +12,12 @@
 internal import Server_Shared
 internal import Vapor
 
-private typealias Server = Server_Shared.Server
-
-extension Server.Status {
-    /// The engine status for this institute status.
+extension HTTP.Status {
+    /// The engine status for this institute status. `HTTPResponseStatus.init(statusCode:reasonPhrase:)`
+    /// discards a custom reason phrase in favor of its own default for status codes it recognizes,
+    /// and defaults to `""` (its own synthesized phrase) when none is supplied — `HTTP.Status`'s
+    /// `reasonPhrase` is optional, so `nil` maps onto that default rather than an empty phrase.
     var vapor: HTTPResponseStatus {
-        HTTPResponseStatus(statusCode: code, reasonPhrase: reason)
+        HTTPResponseStatus(statusCode: code, reasonPhrase: reasonPhrase ?? "")
     }
 }

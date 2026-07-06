@@ -23,10 +23,10 @@ extension Server.Request {
             body = Array(buffer.readableBytesView)
         }
         self.init(
-            method: Server.Method(vapor.method),
+            method: HTTP.Method(vapor.method),
             path: path,
             query: vapor.url.query,
-            headers: Server.Headers(vapor.headers),
+            headers: HTTP.Headers(vapor.headers),
             body: body
         )
     }

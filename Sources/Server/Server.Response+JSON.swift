@@ -20,7 +20,7 @@ extension Server.Response {
     /// An `application/json` response encoding a value with `JSONEncoder`.
     public static func json(
         _ value: some Encodable,
-        status: Server.Status = .ok
+        status: HTTP.Status = .ok
     ) throws(Server.Error) -> Self {
         let data: Data
         do {
@@ -30,7 +30,7 @@ extension Server.Response {
         }
         return Self(
             status: status,
-            headers: ["Content-Type": "application/json; charset=utf-8"],
+            headers: HTTP.Headers(["Content-Type": "application/json; charset=utf-8"]),
             body: Array(data)
         )
     }

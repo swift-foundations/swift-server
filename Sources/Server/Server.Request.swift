@@ -17,20 +17,20 @@ extension Server {
     /// This is the value the consumer's route decoder inspects. It carries no Vapor type; the
     /// internal `Server.Request(vapor:)` bridge produces it at the membrane boundary.
     public struct Request: Sendable {
-        public let method: Server.Method
+        public let method: HTTP.Method
         /// Path components with empty segments removed, e.g. `/analytics/user` → `["analytics", "user"]`.
         public let path: [String]
         /// The raw query string (everything after `?`), or `nil` when absent.
         public let query: String?
-        public let headers: Server.Headers
+        public let headers: HTTP.Headers
         /// The collected request body, or an empty array when there was none.
         public let body: [UInt8]
 
         public init(
-            method: Server.Method,
+            method: HTTP.Method,
             path: [String],
             query: String? = nil,
-            headers: Server.Headers = .init(),
+            headers: HTTP.Headers = .init(),
             body: [UInt8] = []
         ) {
             self.method = method

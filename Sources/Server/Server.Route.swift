@@ -19,13 +19,13 @@ extension Server {
     /// application's pointfree-style catch-all seam (`run(decode:respond:)`) covers the general
     /// case where URL parsing is owned by the consumer's router.
     public struct Route: Sendable {
-        public let method: Server.Method
+        public let method: HTTP.Method
         /// Literal path segments, e.g. `[".well-known", "security.txt"]`.
         public let path: [String]
         public let respond: Server.Responder
 
         public init(
-            method: Server.Method,
+            method: HTTP.Method,
             path: [String],
             respond: @escaping Server.Responder
         ) {

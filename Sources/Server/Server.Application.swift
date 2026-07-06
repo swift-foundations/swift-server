@@ -107,7 +107,7 @@ extension Server_Shared.Server.Application {
         }
         let responder = middleware.chain(around: base)
 
-        for method in Server.Method.allCases {
+        for method in HTTP.Method.allCases {
             vapor.on(method.vapor, "**") { (vaporRequest: Vapor.Request) async -> Vapor.Response in
                 await Server.Application.dispatch(vaporRequest, to: responder)
             }
@@ -142,7 +142,7 @@ extension Server_Shared.Server.Application {
         } catch {
             response = Server.Response(
                 status: error.status,
-                headers: ["Content-Type": "text/plain; charset=utf-8"],
+                headers: HTTP.Headers(["Content-Type": "text/plain; charset=utf-8"]),
                 body: Array(error.message.utf8)
             )
         }

@@ -18,13 +18,13 @@ extension Server {
     /// ``text(_:status:)``, ``redirect(to:permanent:)``, ``status(_:)``) rather than the memberwise
     /// initializer where possible; the internal `vapor()` bridge converts it at the boundary.
     public struct Response: Sendable {
-        public var status: Server.Status
-        public var headers: Server.Headers
+        public var status: HTTP.Status
+        public var headers: HTTP.Headers
         public var body: [UInt8]
 
         public init(
-            status: Server.Status = .ok,
-            headers: Server.Headers = .init(),
+            status: HTTP.Status = .ok,
+            headers: HTTP.Headers = .init(),
             body: [UInt8] = []
         ) {
             self.status = status
@@ -36,10 +36,10 @@ extension Server {
 
 extension Server.Response {
     /// An `text/html` response from a rendered document string.
-    public static func html(_ document: String, status: Server.Status = .ok) -> Self {
+    public static func html(_ document: String, status: HTTP.Status = .ok) -> Self {
         Self(
             status: status,
-            headers: ["Content-Type": "text/html; charset=utf-8"],
+            headers: HTTP.Headers(["Content-Type": "text/html; charset=utf-8"]),
             body: Array(document.utf8)
         )
     }
@@ -48,19 +48,19 @@ extension Server.Response {
     ///
     /// For encoding a value, see the `json(_:status:)` overload taking an `Encodable` in
     /// `Server.Response+JSON.swift`.
-    public static func json(_ serialized: String, status: Server.Status = .ok) -> Self {
+    public static func json(_ serialized: String, status: HTTP.Status = .ok) -> Self {
         Self(
             status: status,
-            headers: ["Content-Type": "application/json; charset=utf-8"],
+            headers: HTTP.Headers(["Content-Type": "application/json; charset=utf-8"]),
             body: Array(serialized.utf8)
         )
     }
 
     /// A `text/plain` response.
-    public static func text(_ string: String, status: Server.Status = .ok) -> Self {
+    public static func text(_ string: String, status: HTTP.Status = .ok) -> Self {
         Self(
             status: status,
-            headers: ["Content-Type": "text/plain; charset=utf-8"],
+            headers: HTTP.Headers(["Content-Type": "text/plain; charset=utf-8"]),
             body: Array(string.utf8)
         )
     }
@@ -69,21 +69,21 @@ extension Server.Response {
     /// POST-redirect-GET).
     public static func redirect(to location: String, permanent: Bool = false) -> Self {
         Self(
-            status: permanent ? .init(code: 301, reason: "Moved Permanently") : .seeOther,
-            headers: ["Location": location]
+            status: permanent ? .movedPermanently : .seeOther,
+            headers: HTTP.Headers(["Location": location])
         )
     }
 
     /// A bare status response with no body (e.g. `.noContent`).
-    public static func status(_ status: Server.Status) -> Self {
+    public static func status(_ status: HTTP.Status) -> Self {
         Self(status: status)
     }
 
     /// A raw-bytes response with an explicit content type.
-    public static func bytes(_ body: [UInt8], contentType: String, status: Server.Status = .ok) -> Self {
+    public static func bytes(_ body: [UInt8], contentType: String, status: HTTP.Status = .ok) -> Self {
         Self(
             status: status,
-            headers: ["Content-Type": contentType],
+            headers: HTTP.Headers(["Content-Type": contentType]),
             body: body
         )
     }

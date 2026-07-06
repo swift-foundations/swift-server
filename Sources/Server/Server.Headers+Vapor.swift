@@ -12,20 +12,20 @@
 internal import Server_Shared
 internal import Vapor
 
-private typealias Server = Server_Shared.Server
-
-extension Server.Headers {
+extension HTTP.Headers {
     /// The engine headers for these institute headers.
     var vapor: HTTPHeaders {
         var headers = HTTPHeaders()
-        for field in fields {
-            headers.add(name: field.name, value: field.value)
+        for field in self {
+            headers.add(name: field.name.rawValue, value: field.value.rawValue)
         }
         return headers
     }
 
     /// Maps engine headers onto institute headers, preserving order and duplicates.
     init(_ vapor: HTTPHeaders) {
-        self.init(vapor.map { Server.Headers.Field(name: $0.name, value: $0.value) })
+        self.init(
+            vapor.map { HTTP.Header.Field(name: .init($0.name), value: .init(unchecked: $0.value)) }
+        )
     }
 }

@@ -11,12 +11,19 @@
 
 public import Server_Shared
 
-// Foundation exception: ProcessInfo backs `.detect()` and `URL` backs the `url(_:)` accessor.
-// URL is deliberately exposed on the public surface — the first consumer reads `envVars.url(...)`
-// for base-URL configuration, so a Foundation-free substitute would break the call site. Every
-// other accessor is stdlib-only.
-public import Foundation
+internal import Environment
 
+// swift-environment's top-level `Environment` enum collides with our own nested
+// `Server.Environment` inside this file — the same shape of collision `Server.Application.swift`
+// documents for Vapor's `public protocol Server`. This file-private alias disambiguates the L3
+// package's type from `Server.Environment` in implementation bodies.
+private typealias SystemEnvironment = Environment
+
+// L2 API gap: `Environment`'s `@_exported import Kernel` transitively re-exports a Kernel-layer
+// type also named `String` (a `~Copyable` low-level primitive, distinct from `Swift.String`),
+// so a bare `String` in this file is ambiguous once `Environment` is imported. `Swift.String` is
+// spelled out everywhere below — the same defensive qualification `swift-environment`'s own
+// source uses throughout (e.g. `Environment.Read.callAsFunction(_ name: Swift.String)`).
 extension Server {
     /// Environment/configuration access: a named environment plus its variable bindings.
     ///
@@ -25,10 +32,10 @@ extension Server {
     /// the first consumer extends its environment type with `databaseHost`, `redisUrl`, etc.
     public struct Environment: Sendable {
         /// The environment name, e.g. `"development"` or `"production"`.
-        public var name: String
-        public var variables: [String: String]
+        public var name: Swift.String
+        public var variables: [Swift.String: Swift.String]
 
-        public init(name: String, variables: [String: String] = [:]) {
+        public init(name: Swift.String, variables: [Swift.String: Swift.String] = [:]) {
             self.name = name
             self.variables = variables
         }
@@ -36,29 +43,30 @@ extension Server {
 }
 
 extension Server.Environment {
-    /// Builds an environment from the current process environment. The name is taken from `ENV`
-    /// (falling back to `ENVIRONMENT`, then `"development"`).
+    /// Builds an environment from the current process environment (via L3 `swift-environment`,
+    /// Foundation-free). The name is taken from `ENV` (falling back to `ENVIRONMENT`, then
+    /// `"development"`).
     public static func detect() -> Self {
-        let variables = ProcessInfo.processInfo.environment
+        let variables = SystemEnvironment.read.all()
         let name = variables["ENV"] ?? variables["ENVIRONMENT"] ?? "development"
         return Self(name: name, variables: variables)
     }
 
     /// Untyped access to a variable. Consumers build typed accessors on top of this, per the
     /// first consumer's `EnvVars` extension pattern.
-    public subscript(key: String) -> String? {
+    public subscript(key: Swift.String) -> Swift.String? {
         get { variables[key] }
         set { variables[key] = newValue }
     }
 
     /// The string value for a key.
-    public func string(_ key: String) -> String? { variables[key] }
+    public func string(_ key: Swift.String) -> Swift.String? { variables[key] }
 
     /// The integer value for a key, or `nil` when absent or unparsable.
-    public func int(_ key: String) -> Int? { variables[key].flatMap(Int.init) }
+    public func int(_ key: Swift.String) -> Int? { variables[key].flatMap(Int.init) }
 
     /// The boolean value for a key. `"1"`, `"true"`, `"yes"`, `"on"` (case-insensitive) are true.
-    public func bool(_ key: String) -> Bool? {
+    public func bool(_ key: Swift.String) -> Bool? {
         guard let raw = variables[key]?.lowercased() else { return nil }
         switch raw {
         case "1", "true", "yes", "on": return true
@@ -67,6 +75,11 @@ extension Server.Environment {
         }
     }
 
-    /// The URL value for a key. (Foundation `URL` — a documented public-surface exception.)
-    public func url(_ key: String) -> URL? { variables[key].flatMap { URL(string: $0) } }
+    /// The string value for a URL-shaped key.
+    ///
+    /// L2 API gap: `swift-environment` is Foundation-free and carries no URL type, so this
+    /// accessor returns the raw string instead of the prototype's `Foundation.URL` — no call
+    /// site in this package consumed the `URL` return type, so this is a pure signature
+    /// narrowing, not a behavior change. Callers parse it with whatever URL type they need.
+    public func url(_ key: Swift.String) -> Swift.String? { variables[key] }
 }
