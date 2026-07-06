@@ -25,12 +25,21 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.20.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
+        // Institute L2/L3 vocabulary — the chassis imports these instead of re-declaring them
+        // (institute-server-stack-architecture.md Q1/Q3: dissolve `Server Shared`'s re-declared
+        // HTTP vocabulary in favor of the RFC 9110 family; swap `Server.Environment` for L3
+        // swift-environment).
+        .package(url: "https://github.com/swift-standards/swift-http-standard.git", branch: "main"),
+        .package(url: "https://github.com/swift-foundations/swift-environment.git", branch: "main"),
     ],
     targets: [
-        // MARK: - Server Shared (internal namespace + engine-free HTTP primitives)
+        // MARK: - Server Shared (internal namespace + the institute L2 HTTP vocabulary re-export)
 
         .target(
             name: "Server Shared",
+            dependencies: [
+                .product(name: "HTTP Standard", package: "swift-http-standard")
+            ],
             path: "Sources/Server Shared"
         ),
 
@@ -41,6 +50,7 @@ let package = Package(
             dependencies: [
                 "Server Shared",
                 .product(name: "Vapor", package: "vapor"),
+                .product(name: "Environment", package: "swift-environment"),
             ],
             path: "Sources/Server"
         ),
