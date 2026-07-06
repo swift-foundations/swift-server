@@ -18,9 +18,9 @@ private import Foundation
 extension Server.HTTP.Request {
     /// Builds a request whose body is a JSON encoding of `value`, with the JSON content type set.
     public static func json(
-        _ method: Server.Method,
+        _ method: HTTP.Method,
         url: String,
-        headers: Server.Headers = .init(),
+        headers: HTTP.Headers = .init(),
         value: some Encodable
     ) throws(Server.HTTP.Error) -> Self {
         let data: Data

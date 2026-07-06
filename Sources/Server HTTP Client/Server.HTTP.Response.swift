@@ -14,13 +14,13 @@ public import Server_Shared
 extension Server.HTTP {
     /// An outbound HTTP response: status, headers, and a byte body.
     public struct Response: Sendable {
-        public let status: Server.Status
-        public let headers: Server.Headers
+        public let status: HTTP.Status
+        public let headers: HTTP.Headers
         public let body: [UInt8]
 
         public init(
-            status: Server.Status,
-            headers: Server.Headers = .init(),
+            status: HTTP.Status,
+            headers: HTTP.Headers = .init(),
             body: [UInt8] = []
         ) {
             self.status = status

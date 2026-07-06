@@ -14,15 +14,15 @@ public import Server_Shared
 extension Server.HTTP {
     /// An outbound HTTP request: method, absolute URL, headers, and a byte body.
     public struct Request: Sendable {
-        public var method: Server.Method
+        public var method: HTTP.Method
         public var url: String
-        public var headers: Server.Headers
+        public var headers: HTTP.Headers
         public var body: [UInt8]
 
         public init(
-            method: Server.Method = .get,
+            method: HTTP.Method = .get,
             url: String,
-            headers: Server.Headers = .init(),
+            headers: HTTP.Headers = .init(),
             body: [UInt8] = []
         ) {
             self.method = method

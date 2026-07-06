@@ -44,8 +44,8 @@ extension Server.HTTP.Client {
     ) async throws(Server.HTTP.Error) -> Server.HTTP.Response {
         var engineRequest = HTTPClientRequest(url: request.url)
         engineRequest.method = request.method.http
-        for field in request.headers.fields {
-            engineRequest.headers.add(name: field.name, value: field.value)
+        for field in request.headers {
+            engineRequest.headers.add(name: field.name.rawValue, value: field.value.rawValue)
         }
         if !request.body.isEmpty {
             engineRequest.body = .bytes(request.body)
@@ -65,15 +65,15 @@ extension Server.HTTP.Client {
             throw Server.HTTP.Error.transport("\(error)")
         }
 
-        var headers = Server.Headers()
+        var headers = HTTP.Headers()
         for field in engineResponse.headers {
             headers.add(name: field.name, value: field.value)
         }
 
         return Server.HTTP.Response(
-            status: Server.Status(
-                code: Int(engineResponse.status.code),
-                reason: engineResponse.status.reasonPhrase
+            status: HTTP.Status(
+                Int(engineResponse.status.code),
+                engineResponse.status.reasonPhrase
             ),
             headers: headers,
             body: Array(buffer.readableBytesView)
@@ -83,7 +83,7 @@ extension Server.HTTP.Client {
     /// Issues a `GET` request.
     public func get(
         _ url: String,
-        headers: Server.Headers = .init()
+        headers: HTTP.Headers = .init()
     ) async throws(Server.HTTP.Error) -> Server.HTTP.Response {
         try await send(Server.HTTP.Request(method: .get, url: url, headers: headers))
     }
@@ -92,7 +92,7 @@ extension Server.HTTP.Client {
     public func post(
         _ url: String,
         body: [UInt8] = [],
-        headers: Server.Headers = .init()
+        headers: HTTP.Headers = .init()
     ) async throws(Server.HTTP.Error) -> Server.HTTP.Response {
         try await send(Server.HTTP.Request(method: .post, url: url, headers: headers, body: body))
     }
