@@ -16,33 +16,38 @@ import Server_Shared
 
 // MARK: - Status vocabulary
 
+// L2 delta: RFC 9110's `HTTP.Status` names these `isSuccessful`/`isRedirection` (the dissolved
+// prototype spelled them `isSuccess`/`isRedirect`) — same semantics, spec-owned names.
 @Test func statusSuccessAndRedirectRanges() {
-    #expect(Server.Status.ok.isSuccess)
-    #expect(Server.Status.created.isSuccess)
-    #expect(Server.Status.seeOther.isRedirect)
-    #expect(!Server.Status.notFound.isSuccess)
-    #expect(Server.Status.noContent.code == 204)
+    #expect(HTTP.Status.ok.isSuccessful)
+    #expect(HTTP.Status.created.isSuccessful)
+    #expect(HTTP.Status.seeOther.isRedirection)
+    #expect(!HTTP.Status.notFound.isSuccessful)
+    #expect(HTTP.Status.noContent.code == 204)
 }
 
 // MARK: - Method
 
+// L2 delta: `HTTP.Method` is an open method set (RawRepresentable, not a closed enum) and its
+// `CaseIterable.allCases` enumerates the 9 RFC 9110 §9.3 + RFC 5789 standard methods (the
+// dissolved prototype's closed enum modeled only 7 — no CONNECT/TRACE).
 @Test func methodRawValuesAndCases() {
-    #expect(Server.Method.get.rawValue == "GET")
-    #expect(Server.Method.delete.rawValue == "DELETE")
-    #expect(Server.Method.allCases.count == 7)
+    #expect(HTTP.Method.get.rawValue == "GET")
+    #expect(HTTP.Method.delete.rawValue == "DELETE")
+    #expect(HTTP.Method.allCases.count == 9)
 }
 
 // MARK: - Headers (case-insensitive, order-preserving)
 
 @Test func headersLookupIsCaseInsensitive() {
-    var headers = Server.Headers()
+    var headers = HTTP.Headers()
     headers.add(name: "Content-Type", value: "text/html")
     #expect(headers.first(name: "content-type") == "text/html")
-    #expect(headers["CONTENT-TYPE"] == "text/html")
+    #expect(headers.first(name: "CONTENT-TYPE") == "text/html")
 }
 
 @Test func headersReplaceCollapsesDuplicates() {
-    var headers = Server.Headers()
+    var headers = HTTP.Headers()
     headers.add(name: "X-Tag", value: "a")
     headers.add(name: "x-tag", value: "b")
     #expect(headers.all(name: "X-Tag") == ["a", "b"])

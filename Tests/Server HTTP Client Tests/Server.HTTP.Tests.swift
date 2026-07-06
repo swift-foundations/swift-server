@@ -28,7 +28,7 @@ import Server_Shared
     let request = Server.HTTP.Request(
         method: .post,
         url: "https://example.com",
-        headers: ["Authorization": "Bearer token"],
+        headers: HTTP.Headers(["Authorization": "Bearer token"]),
         body: Array("payload".utf8)
     )
     #expect(request.method == .post)
