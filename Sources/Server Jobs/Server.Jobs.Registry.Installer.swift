@@ -9,7 +9,7 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
+internal import Server_Shared
 
 internal import Vapor
 
