@@ -1,0 +1,10 @@
+# .github/metadata.yaml
+description: "External-engine membrane for the Swift Institute server runtime — wraps Vapor, PostgresNIO, vapor/queues, and AsyncHTTPClient behind a Foundation-free institute surface."
+topics:
+  - foundations
+  - server
+  - membrane
+homepage: "https://swift-institute.org"
+visibility: private
+readme:
+  family: E
