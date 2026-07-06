@@ -67,6 +67,7 @@ let package = Package(
                 "Server",
                 .product(name: "Queues", package: "queues"),
                 .product(name: "QueuesRedisDriver", package: "queues-redis-driver"),
+                .product(name: "NIOCore", package: "swift-nio"),
             ],
             path: "Sources/Server Jobs"
         ),
