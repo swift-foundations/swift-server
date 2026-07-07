@@ -10,7 +10,6 @@
 // ===----------------------------------------------------------------------===//
 
 public import Server_Shared
-
 // `package import`: the underlying Vapor.Application is exposed at PACKAGE scope only, so the
 // sibling "Server Jobs" target can install a job registry onto the running app's queues. It never
 // crosses the package boundary — the public surface stays engine-free.
@@ -77,6 +76,7 @@ extension Server_Shared.Server.Application {
 
 extension Server_Shared.Server.Application {
     /// Registers discrete routes (the lightweight `Server.Route` model) on the engine's router.
+    ///
     /// Use for endpoints wired individually — webhooks, well-known documents, static handlers.
     public func register(_ routes: [Server_Shared.Server.Route]) {
         for route in routes {
@@ -88,6 +88,9 @@ extension Server_Shared.Server.Application {
         }
     }
 
+    // Deliberately heterogeneous middleware stack: the array holds distinct
+    // concrete Middleware conformers; an existential element type is the design.
+    // swiftlint:disable no_any_protocol_existential
     /// Serves a pointfree-style router: `decode` turns each request into the consumer's route
     /// value, `respond` turns that route value into a response, and `middleware` wraps the pair.
     /// The membrane never parses URLs itself — a catch-all forwards every request to `decode`.
@@ -99,6 +102,7 @@ extension Server_Shared.Server.Application {
         decode: @escaping @Sendable (Server_Shared.Server.Request) async throws(Server_Shared.Server.Error) -> Route,
         respond: @escaping @Sendable (Route) async throws(Server_Shared.Server.Error) -> Server_Shared.Server.Response
     ) async throws(Server_Shared.Server.Error) {
+        // swiftlint:enable no_any_protocol_existential
         try await configure(self)
 
         let base: Server.Responder = { (request: Server.Request) async throws(Server.Error) -> Server.Response in

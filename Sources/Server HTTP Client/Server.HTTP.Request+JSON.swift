@@ -9,11 +9,10 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
-
 // Foundation exception: JSONEncoder is the v0 body serializer. The public parameter is a stdlib
 // `Encodable`; only the implementation touches Foundation.
 private import Foundation
+public import Server_Shared
 
 extension Server.HTTP.Request {
     /// Builds a request whose body is a JSON encoding of `value`, with the JSON content type set.

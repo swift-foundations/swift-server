@@ -20,7 +20,7 @@ extension Server {
     /// case where URL parsing is owned by the consumer's router.
     public struct Route: Sendable {
         public let method: HTTP.Method
-        /// Literal path segments, e.g. `[".well-known", "security.txt"]`.
+        /// Literal path segments, such as `[".well-known", "security.txt"]`.
         public let path: [String]
         public let respond: Server.Responder
 

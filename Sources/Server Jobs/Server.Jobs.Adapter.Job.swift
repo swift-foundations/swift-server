@@ -9,10 +9,9 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Server_Shared
-internal import Scheduler
-
 internal import Queues
+internal import Scheduler
+internal import Server_Shared
 
 extension Server.Jobs.Adapter {
     /// Bridges a ``Scheduler/Job`` onto the engine's `AsyncJob`, keyed by the wrapped job's name
@@ -29,6 +28,8 @@ extension Server.Jobs.Adapter {
 extension Server.Jobs.Adapter.Job: AsyncJob {
     static var name: String { Wrapped.name }
 
+    // Signature forced by external protocol Queues.AsyncJob (untyped throws).
+    // swiftlint:disable:next typed_throws_required
     func dequeue(_ context: QueueContext, _ payload: Wrapped.Payload) async throws {
         try await wrapped.run(payload)
     }

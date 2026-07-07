@@ -9,10 +9,9 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Server_Shared
-
 internal import NIOCore
 internal import PostgresNIO
+internal import Server_Shared
 
 extension Server.PostgreSQL {
     /// A raw-bytes `jsonb` bind parameter.

@@ -9,10 +9,9 @@
 //
 // ===----------------------------------------------------------------------===//
 
-import Testing
-
 import Server_HTTP_Client
 import Server_Shared
+import Testing
 
 // MARK: - Request building
 

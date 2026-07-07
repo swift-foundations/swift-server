@@ -9,9 +9,8 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Scheduler
-
 internal import Queues
+internal import Scheduler
 
 extension Scheduler.Schedule {
     /// Applies this cadence onto the engine's schedule builder.
@@ -19,6 +18,7 @@ extension Scheduler.Schedule {
         switch self {
         case .hourly(let minute):
             builder.hourly().at(ScheduleBuilder.Minute(integerLiteral: minute))
+
         case .daily(let hour, let minute):
             builder.daily().at(
                 ScheduleBuilder.Hour24(integerLiteral: hour),

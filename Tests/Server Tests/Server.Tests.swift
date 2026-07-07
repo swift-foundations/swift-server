@@ -9,10 +9,9 @@
 //
 // ===----------------------------------------------------------------------===//
 
-import Testing
-
 import Server
 import Server_Shared
+import Testing
 
 // MARK: - Status vocabulary
 

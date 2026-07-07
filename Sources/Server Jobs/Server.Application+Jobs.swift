@@ -9,13 +9,12 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server
-public import Server_Shared
-public import Scheduler
-
+internal import NIOCore
 internal import Queues
 internal import QueuesRedisDriver
-internal import NIOCore
+public import Scheduler
+public import Server
+public import Server_Shared
 
 // The core membrane target is itself named `Server`, which shadows the `Server_Shared.Server`
 // namespace enum when both are in scope. The public surface therefore spells the namespace out.

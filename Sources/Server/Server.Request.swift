@@ -18,7 +18,7 @@ extension Server {
     /// internal `Server.Request(vapor:)` bridge produces it at the membrane boundary.
     public struct Request: Sendable {
         public let method: HTTP.Method
-        /// Path components with empty segments removed, e.g. `/analytics/user` → `["analytics", "user"]`.
+        /// Path components with empty segments removed: `/analytics/user` → `["analytics", "user"]`.
         public let path: [String]
         /// The raw query string (everything after `?`), or `nil` when absent.
         public let query: String?
@@ -43,7 +43,7 @@ extension Server {
 }
 
 extension Server.Request {
-    /// The joined path, always leading-slashed, e.g. `["analytics", "user"]` → `/analytics/user`.
+    /// The joined path, always leading-slashed: `["analytics", "user"]` → `/analytics/user`.
     public var pathString: String {
         "/" + path.joined(separator: "/")
     }

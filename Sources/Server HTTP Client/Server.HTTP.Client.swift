@@ -9,11 +9,10 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
-
 internal import AsyncHTTPClient
 internal import NIOCore
 internal import NIOHTTP1
+public import Server_Shared
 
 extension Server.HTTP {
     /// A thin async HTTP client over async-http-client.

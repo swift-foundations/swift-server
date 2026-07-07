@@ -9,10 +9,9 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Server_Shared
-internal import Scheduler
-
 internal import Queues
+internal import Scheduler
+internal import Server_Shared
 internal import Vapor
 
 private typealias Server = Server_Shared.Server

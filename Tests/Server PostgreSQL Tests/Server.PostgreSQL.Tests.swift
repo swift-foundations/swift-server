@@ -9,11 +9,10 @@
 //
 // ===----------------------------------------------------------------------===//
 
-import Testing
-
+import SQL
 import Server_PostgreSQL
 import Server_Shared
-import SQL
+import Testing
 import Time_Primitive
 
 // The statement seam (`SQL.Query` carrying sql + bindings), the binding vocabulary

@@ -9,9 +9,8 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
-
 internal import Environment
+public import Server_Shared
 
 // swift-environment's top-level `Environment` enum collides with our own nested
 // `Server.Environment` inside this file — the same shape of collision `Server.Application.swift`
@@ -31,7 +30,7 @@ extension Server {
     /// dictionary in tests. Consumers extend this type with their own typed accessors, exactly as
     /// the first consumer extends its environment type with `databaseHost`, `redisUrl`, etc.
     public struct Environment: Sendable {
-        /// The environment name, e.g. `"development"` or `"production"`.
+        /// The environment name, such as `"development"` or `"production"`.
         public var name: Swift.String
         public var variables: [Swift.String: Swift.String]
 

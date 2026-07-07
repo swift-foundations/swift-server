@@ -9,11 +9,10 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
-public import SQL
-
 internal import Logging
 internal import PostgresNIO
+public import SQL
+public import Server_Shared
 
 extension Server.PostgreSQL {
     /// The PostgresNIO Live conformance of ``SQL/Database``.
@@ -55,6 +54,8 @@ extension Server.PostgreSQL.Executor {
 }
 
 extension Server.PostgreSQL.Executor: SQL.Database {
+    // Signature forced by protocol SQL.Reader (declares `any SQL.Connection`).
+    // swiftlint:disable no_any_protocol_existential
     /// Runs `body` against a leased pooled connection WITHOUT a transaction.
     ///
     /// PostgreSQL auto-commits every statement outside an explicit transaction block, so a read
@@ -64,6 +65,7 @@ extension Server.PostgreSQL.Executor: SQL.Database {
     public func read<Value: Sendable>(
         _ body: @Sendable (any SQL.Connection) async throws(SQL.Error) -> Value
     ) async throws(SQL.Error) -> Value {
+        // swiftlint:enable no_any_protocol_existential
         let logger = logger
         do {
             return try await client.withConnection { connection in
@@ -76,29 +78,38 @@ extension Server.PostgreSQL.Executor: SQL.Database {
         }
     }
 
+    // Signature forced by protocol SQL.Database (declares `any SQL.Connection`).
+    // swiftlint:disable no_any_protocol_existential
     /// Runs `body` inside a write transaction: `BEGIN`, the body against a leased connection, then
     /// `COMMIT` on success or `ROLLBACK` on a thrown error.
     public func write<Value: Sendable>(
         _ body: @Sendable (any SQL.Connection) async throws(SQL.Error) -> Value
     ) async throws(SQL.Error) -> Value {
+        // swiftlint:enable no_any_protocol_existential
         try await withinTransaction(finish: "COMMIT", onError: "ROLLBACK", body)
     }
 
+    // Signature forced by protocol SQL.Database (declares `any SQL.Connection`).
+    // swiftlint:disable no_any_protocol_existential
     /// Runs `body` inside a transaction that always ends with `ROLLBACK` — the affordance for
     /// observing a statement's effect without persisting it.
     public func withRollback<Value: Sendable>(
         _ body: @Sendable (any SQL.Connection) async throws(SQL.Error) -> Value
     ) async throws(SQL.Error) -> Value {
+        // swiftlint:enable no_any_protocol_existential
         try await withinTransaction(finish: "ROLLBACK", onError: "ROLLBACK", body)
     }
 }
 
 extension Server.PostgreSQL.Executor {
+    // Body type forwarded from the SQL.Database protocol requirements above.
+    // swiftlint:disable no_any_protocol_existential
     private func withinTransaction<Value: Sendable>(
         finish: String,
         onError: String,
         _ body: @Sendable (any SQL.Connection) async throws(SQL.Error) -> Value
     ) async throws(SQL.Error) -> Value {
+        // swiftlint:enable no_any_protocol_existential
         let logger = logger
         do {
             return try await client.withConnection { connection in
@@ -109,7 +120,12 @@ extension Server.PostgreSQL.Executor {
                     _ = try await connection.query(PostgresQuery(unsafeSQL: finish), logger: logger)
                     return value
                 } catch {
-                    _ = try? await connection.query(PostgresQuery(unsafeSQL: onError), logger: logger)
+                    do {
+                        _ = try await connection.query(PostgresQuery(unsafeSQL: onError), logger: logger)
+                    } catch {
+                        // Best-effort ROLLBACK: the body's error below is the one that matters;
+                        // a rollback failure on an already-failed transaction adds nothing.
+                    }
                     throw error
                 }
             }

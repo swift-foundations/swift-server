@@ -25,6 +25,9 @@ extension Server {
     }
 }
 
+// Deliberately heterogeneous middleware stack: the array holds distinct
+// concrete Middleware conformers; an existential element type is the design.
+// swiftlint:disable:next no_any_protocol_existential
 extension [any Server.Middleware] {
     /// Folds this middleware stack around a base responder, producing a single responder. The first
     /// element becomes the outermost layer (it runs first on the way in, last on the way out).

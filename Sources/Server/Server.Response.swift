@@ -74,7 +74,7 @@ extension Server.Response {
         )
     }
 
-    /// A bare status response with no body (e.g. `.noContent`).
+    /// A bare status response with no body (such as `.noContent`).
     public static func status(_ status: HTTP.Status) -> Self {
         Self(status: status)
     }

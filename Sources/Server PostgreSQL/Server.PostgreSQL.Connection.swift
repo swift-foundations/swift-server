@@ -9,15 +9,14 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Server_Shared
-internal import RFC_4122
-internal import SQL
-internal import Time_Primitive
-
 internal import Foundation
 internal import Logging
 internal import NIOCore
 internal import PostgresNIO
+internal import RFC_4122
+internal import SQL
+internal import Server_Shared
+internal import Time_Primitive
 
 extension Server.PostgreSQL {
     /// A connection-scoped ``SQL/Connection`` bound to a single leased PostgresNIO connection.
@@ -49,10 +48,13 @@ extension Server.PostgreSQL.Connection: SQL.Connection {
         return count
     }
 
+    // Signature forced by protocol SQL.Connection (declares `any SQL.Row`).
+    // swiftlint:disable no_any_protocol_existential
     func fetchAll<Value: Sendable>(
         _ statement: some SQL.Statement,
         decode: (any SQL.Row) throws(SQL.Error) -> Value
     ) async throws(SQL.Error) -> [Value] {
+        // swiftlint:enable no_any_protocol_existential
         let sequence = try await rows(for: statement)
         var results: [Value] = []
         do {
@@ -67,10 +69,13 @@ extension Server.PostgreSQL.Connection: SQL.Connection {
         return results
     }
 
+    // Signature forced by protocol SQL.Connection (declares `any SQL.Row`).
+    // swiftlint:disable no_any_protocol_existential
     func fetchOne<Value: Sendable>(
         _ statement: some SQL.Statement,
         decode: (any SQL.Row) throws(SQL.Error) -> Value
     ) async throws(SQL.Error) -> Value? {
+        // swiftlint:enable no_any_protocol_existential
         let sequence = try await rows(for: statement)
         do {
             for try await row in sequence {
@@ -113,10 +118,13 @@ extension Server.PostgreSQL.Connection {
             case .double(let double): binds.append(double)
             case .bool(let bool): binds.append(bool)
             case .uuid(let uuid): binds.append(Foundation.UUID(uuid: uuid.bytes))
+
             case .timestamp(let instant):
-                let interval = Double(instant.secondsSinceUnixEpoch)
+                let interval =
+                    Double(instant.secondsSinceUnixEpoch)
                     + Double(instant.nanosecondFraction) / 1_000_000_000
                 binds.append(Date(timeIntervalSince1970: interval))
+
             case .blob(let bytes): binds.append(ByteBuffer(bytes: bytes))
             case .jsonb(let bytes): binds.append(Server.PostgreSQL.JSONBParameter(bytes: bytes))
             case .null: binds.appendNull()

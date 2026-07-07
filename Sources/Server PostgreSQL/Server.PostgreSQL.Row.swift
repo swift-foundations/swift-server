@@ -9,14 +9,13 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
-public import RFC_4122
-public import SQL
-public import Time_Primitive
-
 internal import Foundation
 internal import NIOCore
 internal import PostgresNIO
+public import RFC_4122
+public import SQL
+public import Server_Shared
+public import Time_Primitive
 
 extension Server.PostgreSQL {
     /// The PostgresNIO Live conformance of ``SQL/Row``.

@@ -9,12 +9,11 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
-
 // Foundation exception: JSONDecoder is the v0 deserializer for the request-body convenience.
 // The public parameter/return is a stdlib `Decodable`, not a Foundation type; only the
 // internal implementation touches Foundation.
 private import Foundation
+public import Server_Shared
 
 extension Server.Request {
     /// Decodes the request body as JSON into the given `Decodable` type.

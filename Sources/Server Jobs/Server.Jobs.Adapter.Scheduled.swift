@@ -9,10 +9,9 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Server_Shared
-internal import Scheduler
-
 internal import Queues
+internal import Scheduler
+internal import Server_Shared
 
 extension Server.Jobs.Adapter {
     /// Bridges a ``Scheduler/Scheduled`` onto the engine's `AsyncScheduledJob`.
@@ -26,6 +25,8 @@ extension Server.Jobs.Adapter {
 }
 
 extension Server.Jobs.Adapter.Scheduled: AsyncScheduledJob {
+    // Signature forced by external protocol Queues.AsyncScheduledJob (untyped throws).
+    // swiftlint:disable:next typed_throws_required
     func run(context: QueueContext) async throws {
         try await wrapped.run()
     }

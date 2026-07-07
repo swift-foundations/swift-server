@@ -9,10 +9,9 @@
 //
 // ===----------------------------------------------------------------------===//
 
-import Testing
-
 import Scheduler
 import Server_Jobs
+import Testing
 
 // The first consumer's three jobs, modeled against the L3 Scheduler interface that `Server Jobs`
 // is the vapor/queues Live conformance of: on-demand bulk work (payload), and two scheduled jobs.

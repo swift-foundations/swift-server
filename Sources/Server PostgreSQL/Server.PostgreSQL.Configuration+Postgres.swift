@@ -9,10 +9,9 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Server_Shared
-
 internal import NIOSSL
 internal import PostgresNIO
+internal import Server_Shared
 
 extension Server.PostgreSQL.Configuration {
     /// The engine configuration for this institute configuration.
