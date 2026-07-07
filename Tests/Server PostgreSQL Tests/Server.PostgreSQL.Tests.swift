@@ -9,67 +9,74 @@
 //
 // ===----------------------------------------------------------------------===//
 
-import Foundation
 import Testing
 
 import Server_PostgreSQL
 import Server_Shared
+import SQL
+import Time_Primitive
 
-// MARK: - Statement seam
-
-@Test func queryCarriesSQLAndBindings() {
-    let query = Server.PostgreSQL.Query(
-        sql: "SELECT * FROM t WHERE id = $1 AND name = $2",
-        bindings: [.uuid(UUID()), .text("repotraffic")]
-    )
-    #expect(query.sql.contains("$1"))
-    #expect(query.bindings.count == 2)
-    #expect(query.bindings.last == .text("repotraffic"))
-}
-
-@Test func valueEquatable() {
-    #expect(Server.PostgreSQL.Value.int(1) == .int(1))
-    #expect(Server.PostgreSQL.Value.null == .null)
-    #expect(Server.PostgreSQL.Value.text("a") != .text("b"))
-}
+// The statement seam (`SQL.Query` carrying sql + bindings), the binding vocabulary
+// (`SQL.Value`), and the migrator now live in the L3 `swift-sql` / `swift-migrations` packages and
+// are covered by their own suites. What THIS target owns and can cover engine-free is the
+// connection configuration and the `Date` → `Instant` interval conversion the Live row performs.
 
 // MARK: - Configuration
 
-@Test func configurationDefaults() {
+@Test func `Configuration applies localhost defaults`() {
     let configuration = Server.PostgreSQL.Configuration(username: "postgres")
     #expect(configuration.host == "localhost")
     #expect(configuration.port == 5432)
     #expect(configuration.security == .preferred)
 }
 
-// MARK: - Migrator ordering (pure — no database)
-
-@Test func migratorPreservesRegistrationOrder() {
-    var migrator = Server.PostgreSQL.Migrator()
-    migrator.register("v1_accounts") { _ in }
-    migrator.register("v2_repositories") { _ in }
-    migrator.register("v3_traffic") { _ in }
-    #expect(migrator.names == ["v1_accounts", "v2_repositories", "v3_traffic"])
+@Test func `Configuration carries explicit overrides`() {
+    let configuration = Server.PostgreSQL.Configuration(
+        host: "db.internal",
+        port: 6000,
+        username: "app",
+        password: "secret",
+        database: "repotraffic",
+        security: .required
+    )
+    #expect(configuration.host == "db.internal")
+    #expect(configuration.port == 6000)
+    #expect(configuration.database == "repotraffic")
+    #expect(configuration.security == .required)
 }
 
-@Test func migratorPendingExcludesAppliedPreservingOrder() {
-    var migrator = Server.PostgreSQL.Migrator()
-    migrator.register("a") { _ in }
-    migrator.register("b") { _ in }
-    migrator.register("c") { _ in }
-    migrator.register("d") { _ in }
-    let pending = migrator.pending(applied: ["a", "c"])
-    #expect(pending.map(\.name) == ["b", "d"])
+// MARK: - Date → Instant interval conversion (the Live row's timestamp seam, engine-free)
+
+@Test func `Instant from a whole-second interval has zero fraction`() {
+    let instant = Server.PostgreSQL.Row.instant(fromUnixInterval: 1_732_276_800)
+    #expect(instant.secondsSinceUnixEpoch == 1_732_276_800)
+    #expect(instant.nanosecondFraction == 0)
 }
 
-@Test func migratorPendingEmptyWhenAllApplied() {
-    var migrator = Server.PostgreSQL.Migrator()
-    migrator.register("a") { _ in }
-    migrator.register("b") { _ in }
-    let pending = migrator.pending(applied: ["a", "b"])
-    #expect(pending.isEmpty)
+@Test func `Instant from a positive sub-second interval keeps the fraction`() {
+    let instant = Server.PostgreSQL.Row.instant(fromUnixInterval: 1.5)
+    #expect(instant.secondsSinceUnixEpoch == 1)
+    #expect(instant.nanosecondFraction == 500_000_000)
 }
 
-@Test func migratorAppliedTableNameIsStable() {
-    #expect(Server.PostgreSQL.Migrator.appliedTableName == "_server_migrations")
+@Test func `Instant from a pre-1970 interval floors to a non-negative fraction`() {
+    // -0.5s before the epoch must floor to (-1s, +0.5s) so the fraction is non-negative.
+    let instant = Server.PostgreSQL.Row.instant(fromUnixInterval: -0.5)
+    #expect(instant.secondsSinceUnixEpoch == -1)
+    #expect(instant.nanosecondFraction == 500_000_000)
+    #expect(instant.nanosecondFraction >= 0)
+    #expect(instant.nanosecondFraction < 1_000_000_000)
+}
+
+@Test func `Instant from a negative whole-second interval has zero fraction`() {
+    let instant = Server.PostgreSQL.Row.instant(fromUnixInterval: -2)
+    #expect(instant.secondsSinceUnixEpoch == -2)
+    #expect(instant.nanosecondFraction == 0)
+}
+
+@Test func `Instant rounding a near-full-second fraction carries into the seconds`() {
+    // A fraction that rounds up to a full second must carry into the seconds and reset the fraction.
+    let instant = Server.PostgreSQL.Row.instant(fromUnixInterval: 0.9999999996)
+    #expect(instant.secondsSinceUnixEpoch == 1)
+    #expect(instant.nanosecondFraction == 0)
 }
