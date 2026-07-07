@@ -106,8 +106,12 @@ extension Server.PostgreSQL.Row {
 
     public func stringIfPresent(_ column: String) throws(SQL.Error) -> String? { try decode(String?.self, column: column) }
     public func intIfPresent(_ column: String) throws(SQL.Error) -> Int? { try decode(Int?.self, column: column) }
+    public func int64IfPresent(_ column: String) throws(SQL.Error) -> Int64? { try decode(Int64?.self, column: column) }
+    public func doubleIfPresent(_ column: String) throws(SQL.Error) -> Double? { try decode(Double?.self, column: column) }
+    public func boolIfPresent(_ column: String) throws(SQL.Error) -> Bool? { try decode(Bool?.self, column: column) }
     public func uuidIfPresent(_ column: String) throws(SQL.Error) -> RFC_4122.UUID? { try decode(UUID?.self, column: column).map(Self.convert) }
     public func timestampIfPresent(_ column: String) throws(SQL.Error) -> Instant? { try decode(Date?.self, column: column).map(Self.convert) }
+    public func bytesIfPresent(_ column: String) throws(SQL.Error) -> [UInt8]? { try decode(ByteBuffer?.self, column: column).map { Array(buffer: $0) } }
 
     // MARK: By column index
 
@@ -119,4 +123,19 @@ extension Server.PostgreSQL.Row {
     public func uuid(at index: Int) throws(SQL.Error) -> RFC_4122.UUID { Self.convert(try decode(UUID.self, at: index)) }
     public func timestamp(at index: Int) throws(SQL.Error) -> Instant { Self.convert(try decode(Date.self, at: index)) }
     public func bytes(at index: Int) throws(SQL.Error) -> [UInt8] { Array(buffer: try decode(ByteBuffer.self, at: index)) }
+
+    // MARK: By column index (optional)
+    //
+    // PostgresNIO decodes `NULL` as `Optional.none` when the target is `T?`; a type mismatch throws
+    // and surfaces as ``SQL/Error/decoding(_:)`` via the shared `decode` helper. The positional
+    // accessors the DSL bridge's `SQL.RowDecoder` drives.
+
+    public func stringIfPresent(at index: Int) throws(SQL.Error) -> String? { try decode(String?.self, at: index) }
+    public func intIfPresent(at index: Int) throws(SQL.Error) -> Int? { try decode(Int?.self, at: index) }
+    public func int64IfPresent(at index: Int) throws(SQL.Error) -> Int64? { try decode(Int64?.self, at: index) }
+    public func doubleIfPresent(at index: Int) throws(SQL.Error) -> Double? { try decode(Double?.self, at: index) }
+    public func boolIfPresent(at index: Int) throws(SQL.Error) -> Bool? { try decode(Bool?.self, at: index) }
+    public func uuidIfPresent(at index: Int) throws(SQL.Error) -> RFC_4122.UUID? { try decode(UUID?.self, at: index).map(Self.convert) }
+    public func timestampIfPresent(at index: Int) throws(SQL.Error) -> Instant? { try decode(Date?.self, at: index).map(Self.convert) }
+    public func bytesIfPresent(at index: Int) throws(SQL.Error) -> [UInt8]? { try decode(ByteBuffer?.self, at: index).map { Array(buffer: $0) } }
 }
