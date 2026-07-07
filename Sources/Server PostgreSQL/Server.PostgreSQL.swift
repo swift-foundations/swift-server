@@ -12,9 +12,14 @@
 public import Server_Shared
 
 extension Server {
-    /// The persistence-execution membrane: runs SQL statements over PostgresNIO behind an
-    /// institute surface, with a DSL-free ``Server/PostgreSQL/Statement`` seam so the module stays
-    /// resolvable even while the Structured Queries DSL package is unresolvable in the ecosystem
-    /// graph (see `Research/consumer-call-site-inventory.md`).
+    /// The PostgresNIO Live conformance of the L3 `SQL.Database` interface (institute
+    /// server-stack architecture Q3, item 4).
+    ///
+    /// The engine-free execution vocabulary — the statement seam, the binding values, the decoded
+    /// row, the connection / reader / database handles, and the migrator — lives in the L3
+    /// `swift-sql` and `swift-migrations` packages. This namespace supplies the single live
+    /// conformance that runs those interfaces over PostgresNIO behind the institute membrane:
+    /// ``Server/PostgreSQL/Executor`` is a `SQL.Database`, and every PostgresNIO import is
+    /// `internal` so no engine type crosses the public surface.
     public enum PostgreSQL {}
 }

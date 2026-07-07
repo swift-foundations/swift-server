@@ -31,6 +31,11 @@ let package = Package(
         // swift-environment).
         .package(url: "https://github.com/swift-standards/swift-http-standard.git", branch: "main"),
         .package(url: "https://github.com/swift-foundations/swift-environment.git", branch: "main"),
+        // Institute L3 persistence interfaces. `Server PostgreSQL` is the PostgresNIO Live
+        // conformance of these engine-free surfaces (institute-server-stack-architecture.md Q2–Q4):
+        // the executor conforms to `SQL.Database`, and migrations run via `SQL.Migrator`.
+        .package(url: "https://github.com/swift-foundations/swift-sql.git", branch: "main"),
+        .package(url: "https://github.com/swift-foundations/swift-migrations.git", branch: "main"),
     ],
     targets: [
         // MARK: - Server Shared (internal namespace + the institute L2 HTTP vocabulary re-export)
@@ -61,6 +66,8 @@ let package = Package(
             name: "Server PostgreSQL",
             dependencies: [
                 "Server Shared",
+                .product(name: "SQL", package: "swift-sql"),
+                .product(name: "Migrations", package: "swift-migrations"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "NIOSSL", package: "swift-nio-ssl"),
@@ -104,7 +111,12 @@ let package = Package(
         ),
         .testTarget(
             name: "Server PostgreSQL Tests",
-            dependencies: ["Server PostgreSQL", "Server Shared"],
+            dependencies: [
+                "Server PostgreSQL",
+                "Server Shared",
+                .product(name: "SQL", package: "swift-sql"),
+                .product(name: "SQL Test Support", package: "swift-sql"),
+            ],
             path: "Tests/Server PostgreSQL Tests"
         ),
         .testTarget(

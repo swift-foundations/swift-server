@@ -10,25 +10,26 @@
 // ===----------------------------------------------------------------------===//
 
 public import Server_Shared
+public import SQL
 
-internal import Foundation
 internal import Logging
 internal import PostgresNIO
 
 extension Server.PostgreSQL {
-    /// Runs statements over PostgresNIO behind the institute surface.
+    /// The PostgresNIO Live conformance of ``SQL/Database``.
     ///
     /// Build a pooled executor with ``init(configuration:)`` and service its pool by calling
-    /// ``run()`` in a long-lived task (as the first consumer's `Database.pool` requires). The query
-    /// methods (``execute(_:)``, ``fetchAll(_:decode:)``, ``fetchOne(_:decode:)``) and the
-    /// transaction scopes (``transaction(_:)``, ``withRollback(_:)``) accept any
-    /// ``Server/PostgreSQL/Statement`` and never surface a PostgresNIO type.
+    /// ``run()`` in a long-lived task (the pool only leases connections while `run()` is
+    /// executing). The ``SQL/Database`` scopes — ``read(_:)``, ``write(_:)``,
+    /// ``withRollback(_:)`` — each lease a pooled connection and hand the body a
+    /// ``Server/PostgreSQL/Connection`` as an `any SQL.Connection`; no PostgresNIO type ever
+    /// crosses the public surface.
     public struct Executor: Sendable {
-        let backing: Server.PostgreSQL.Executor.Backing
+        let client: PostgresClient
         let logger: Logger
 
-        init(backing: Server.PostgreSQL.Executor.Backing, logger: Logger) {
-            self.backing = backing
+        init(client: PostgresClient, logger: Logger) {
+            self.client = client
             self.logger = logger
         }
     }
@@ -41,119 +42,67 @@ extension Server.PostgreSQL.Executor {
         var logger = Logger(label: "server.postgresql")
         logger.logLevel = .critical
         self.init(
-            backing: .client(PostgresClient(configuration: configuration.postgres)),
+            client: PostgresClient(configuration: configuration.postgres),
             logger: logger
         )
     }
 
     /// Services the connection pool. Call once in a long-lived task; returns when the pool shuts
-    /// down. No-op for a connection-scoped executor.
+    /// down.
     public func run() async {
-        if case .client(let client) = backing {
-            await client.run()
-        }
+        await client.run()
     }
 }
 
-extension Server.PostgreSQL.Executor {
-    /// Executes a statement and returns the number of rows the server produced.
-    public func execute(
-        _ statement: some Server.PostgreSQL.Statement
-    ) async throws(Server.PostgreSQL.Error) -> Int {
-        let sequence = try await rows(for: statement)
-        var count = 0
-        do {
-            for try await _ in sequence { count += 1 }
-        } catch {
-            throw Server.PostgreSQL.Error.execution("\(error)")
-        }
-        return count
-    }
-
-    /// Executes a statement and decodes every row via the given closure.
-    public func fetchAll<Value: Sendable>(
-        _ statement: some Server.PostgreSQL.Statement,
-        decode: (Server.PostgreSQL.Row) throws(Server.PostgreSQL.Error) -> Value
-    ) async throws(Server.PostgreSQL.Error) -> [Value] {
-        let sequence = try await rows(for: statement)
-        var results: [Value] = []
-        do {
-            for try await row in sequence {
-                results.append(try decode(Server.PostgreSQL.Row(row.makeRandomAccess())))
-            }
-        } catch let error as Server.PostgreSQL.Error {
-            throw error
-        } catch {
-            throw Server.PostgreSQL.Error.execution("\(error)")
-        }
-        return results
-    }
-
-    /// Executes a statement and decodes the first row, or returns `nil` when there is none.
-    public func fetchOne<Value: Sendable>(
-        _ statement: some Server.PostgreSQL.Statement,
-        decode: (Server.PostgreSQL.Row) throws(Server.PostgreSQL.Error) -> Value
-    ) async throws(Server.PostgreSQL.Error) -> Value? {
-        let sequence = try await rows(for: statement)
-        do {
-            for try await row in sequence {
-                return try decode(Server.PostgreSQL.Row(row.makeRandomAccess()))
-            }
-        } catch let error as Server.PostgreSQL.Error {
-            throw error
-        } catch {
-            throw Server.PostgreSQL.Error.execution("\(error)")
-        }
-        return nil
-    }
-}
-
-extension Server.PostgreSQL.Executor {
-    /// Runs `body` inside a transaction: `BEGIN`, then the body against a connection-scoped
-    /// executor, then `COMMIT` on success or `ROLLBACK` on a thrown error.
-    public func transaction<Value: Sendable>(
-        _ body: @Sendable (Server.PostgreSQL.Executor) async throws(Server.PostgreSQL.Error) -> Value
-    ) async throws(Server.PostgreSQL.Error) -> Value {
-        try await withinConnection(finish: "COMMIT", onError: "ROLLBACK", body)
-    }
-
-    /// Runs `body` inside a transaction that always ends with `ROLLBACK` — the test-support
-    /// affordance mirroring the first consumer's `db.withRollback`, so an assertion can observe a
-    /// statement's effect without persisting it.
-    public func withRollback<Value: Sendable>(
-        _ body: @Sendable (Server.PostgreSQL.Executor) async throws(Server.PostgreSQL.Error) -> Value
-    ) async throws(Server.PostgreSQL.Error) -> Value {
-        try await withinConnection(finish: "ROLLBACK", onError: "ROLLBACK", body)
-    }
-}
-
-extension Server.PostgreSQL.Executor {
-    private func rows(
-        for statement: some Server.PostgreSQL.Statement
-    ) async throws(Server.PostgreSQL.Error) -> PostgresRowSequence {
-        let query = PostgresQuery(unsafeSQL: statement.sql, binds: Self.bindings(for: statement))
-        do {
-            switch backing {
-            case .client(let client): return try await client.query(query, logger: logger)
-            case .connection(let connection): return try await connection.query(query, logger: logger)
-            }
-        } catch {
-            throw Server.PostgreSQL.Error.execution("\(error)")
-        }
-    }
-
-    private func withinConnection<Value: Sendable>(
-        finish: String,
-        onError: String,
-        _ body: @Sendable (Server.PostgreSQL.Executor) async throws(Server.PostgreSQL.Error) -> Value
-    ) async throws(Server.PostgreSQL.Error) -> Value {
-        guard case .client(let client) = backing else {
-            throw Server.PostgreSQL.Error.transaction("a transaction requires a pooled executor")
-        }
+extension Server.PostgreSQL.Executor: SQL.Database {
+    /// Runs `body` against a leased pooled connection WITHOUT a transaction.
+    ///
+    /// PostgreSQL auto-commits every statement outside an explicit transaction block, so a read
+    /// scope needs no `BEGIN`/`COMMIT`: the body observes a consistent single-statement view per
+    /// query and the connection is returned to the pool when the scope ends. Use ``write(_:)`` when
+    /// the body's statements must commit or roll back atomically.
+    public func read<Value: Sendable>(
+        _ body: @Sendable (any SQL.Connection) async throws(SQL.Error) -> Value
+    ) async throws(SQL.Error) -> Value {
         let logger = logger
         do {
             return try await client.withConnection { connection in
-                let scoped = Server.PostgreSQL.Executor(backing: .connection(connection), logger: logger)
+                try await body(Server.PostgreSQL.Connection(connection: connection, logger: logger))
+            }
+        } catch let error as SQL.Error {
+            throw error
+        } catch {
+            throw SQL.Error.connection("\(error)")
+        }
+    }
+
+    /// Runs `body` inside a write transaction: `BEGIN`, the body against a leased connection, then
+    /// `COMMIT` on success or `ROLLBACK` on a thrown error.
+    public func write<Value: Sendable>(
+        _ body: @Sendable (any SQL.Connection) async throws(SQL.Error) -> Value
+    ) async throws(SQL.Error) -> Value {
+        try await withinTransaction(finish: "COMMIT", onError: "ROLLBACK", body)
+    }
+
+    /// Runs `body` inside a transaction that always ends with `ROLLBACK` — the affordance for
+    /// observing a statement's effect without persisting it.
+    public func withRollback<Value: Sendable>(
+        _ body: @Sendable (any SQL.Connection) async throws(SQL.Error) -> Value
+    ) async throws(SQL.Error) -> Value {
+        try await withinTransaction(finish: "ROLLBACK", onError: "ROLLBACK", body)
+    }
+}
+
+extension Server.PostgreSQL.Executor {
+    private func withinTransaction<Value: Sendable>(
+        finish: String,
+        onError: String,
+        _ body: @Sendable (any SQL.Connection) async throws(SQL.Error) -> Value
+    ) async throws(SQL.Error) -> Value {
+        let logger = logger
+        do {
+            return try await client.withConnection { connection in
+                let scoped = Server.PostgreSQL.Connection(connection: connection, logger: logger)
                 _ = try await connection.query("BEGIN", logger: logger)
                 do {
                     let value = try await body(scoped)
@@ -164,27 +113,10 @@ extension Server.PostgreSQL.Executor {
                     throw error
                 }
             }
-        } catch let error as Server.PostgreSQL.Error {
+        } catch let error as SQL.Error {
             throw error
         } catch {
-            throw Server.PostgreSQL.Error.transaction("\(error)")
+            throw SQL.Error.transaction("\(error)")
         }
-    }
-
-    private static func bindings(for statement: some Server.PostgreSQL.Statement) -> PostgresBindings {
-        var binds = PostgresBindings(capacity: statement.bindings.count)
-        for value in statement.bindings {
-            switch value {
-            case .text(let text): binds.append(text)
-            case .int(let int): binds.append(int)
-            case .int64(let int): binds.append(int)
-            case .double(let double): binds.append(double)
-            case .bool(let bool): binds.append(bool)
-            case .uuid(let uuid): binds.append(uuid)
-            case .timestamp(let date): binds.append(date)
-            case .null: binds.appendNull()
-            }
-        }
-        return binds
     }
 }
