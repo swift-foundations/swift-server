@@ -114,8 +114,10 @@ let package = Package(
             dependencies: [
                 "Server PostgreSQL",
                 "Server Shared",
+                // The engine-free tests import `SQL` (and, transitively through it, `Time Primitive`)
+                // to exercise the Date -> Instant seam. No scripted `SQL Test Support` double is
+                // needed until a live-server integration test lands.
                 .product(name: "SQL", package: "swift-sql"),
-                .product(name: "SQL Test Support", package: "swift-sql"),
             ],
             path: "Tests/Server PostgreSQL Tests"
         ),
