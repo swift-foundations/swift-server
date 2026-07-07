@@ -11,27 +11,28 @@
 
 import Testing
 
+import Scheduler
 import Server_Jobs
-import Server_Shared
 
-// The first consumer's three jobs, modeled: on-demand bulk work (payload), and two scheduled jobs.
+// The first consumer's three jobs, modeled against the L3 Scheduler interface that `Server Jobs`
+// is the vapor/queues Live conformance of: on-demand bulk work (payload), and two scheduled jobs.
 
-private struct BulkTrackJob: Server.Jobs.Job {
+private struct BulkTrackJob: Scheduler.Job {
     struct Payload: Codable, Sendable {
         let identityId: String
         let statusId: String
     }
-    func run(_ payload: Payload) async throws(Server.Jobs.Error) {}
+    func run(_ payload: Payload) async throws(Scheduler.Error) {}
 }
 
-private struct PollJob: Server.Jobs.Scheduled {
-    static var schedule: Server.Jobs.Schedule { .hourly(minute: 0) }
-    func run() async throws(Server.Jobs.Error) {}
+private struct PollJob: Scheduler.Scheduled {
+    static var schedule: Scheduler.Schedule { .hourly(minute: 0) }
+    func run() async throws(Scheduler.Error) {}
 }
 
-private struct CacheRefreshJob: Server.Jobs.Scheduled {
-    static var schedule: Server.Jobs.Schedule { .hourly(minute: 5) }
-    func run() async throws(Server.Jobs.Error) {}
+private struct CacheRefreshJob: Scheduler.Scheduled {
+    static var schedule: Scheduler.Schedule { .hourly(minute: 5) }
+    func run() async throws(Scheduler.Error) {}
 }
 
 // MARK: - Default names
@@ -44,8 +45,8 @@ private struct CacheRefreshJob: Server.Jobs.Scheduled {
 // MARK: - Schedule
 
 @Test func scheduleEquatableCases() {
-    #expect(Server.Jobs.Schedule.hourly(minute: 5) == .hourly(minute: 5))
-    #expect(Server.Jobs.Schedule.hourly(minute: 0) != .hourly(minute: 5))
+    #expect(Scheduler.Schedule.hourly(minute: 5) == .hourly(minute: 5))
+    #expect(Scheduler.Schedule.hourly(minute: 0) != .hourly(minute: 5))
     #expect(PollJob.schedule == .hourly(minute: 0))
     #expect(CacheRefreshJob.schedule == .hourly(minute: 5))
 }
@@ -53,14 +54,14 @@ private struct CacheRefreshJob: Server.Jobs.Scheduled {
 // MARK: - Registry accumulation (pure — no engine)
 
 @Test func registryStartsEmpty() {
-    let registry = Server.Jobs.Registry()
+    let registry = Scheduler.Registry()
     #expect(registry.count == 0)
     #expect(registry.jobNames.isEmpty)
     #expect(registry.scheduledNames.isEmpty)
 }
 
 @Test func registryAccumulatesJobsAndSchedules() {
-    var registry = Server.Jobs.Registry()
+    var registry = Scheduler.Registry()
     registry.register(BulkTrackJob())
     registry.schedule(PollJob())
     registry.schedule(CacheRefreshJob())
@@ -72,6 +73,6 @@ private struct CacheRefreshJob: Server.Jobs.Scheduled {
 // MARK: - Driver / Execution vocabulary
 
 @Test func driverAndExecutionCases() {
-    #expect(Server.Jobs.Driver.redis(url: "redis://localhost:6379") == .redis(url: "redis://localhost:6379"))
-    #expect(Server.Jobs.Execution.inProcess != .workers)
+    #expect(Scheduler.Driver.redis(url: "redis://localhost:6379") == .redis(url: "redis://localhost:6379"))
+    #expect(Scheduler.Execution.inProcess != .workers)
 }
