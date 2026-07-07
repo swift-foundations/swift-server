@@ -36,6 +36,11 @@ let package = Package(
         // the executor conforms to `SQL.Database`, and migrations run via `SQL.Migrator`.
         .package(url: "https://github.com/swift-foundations/swift-sql.git", branch: "main"),
         .package(url: "https://github.com/swift-foundations/swift-migrations.git", branch: "main"),
+        // Institute L3 background-jobs interface. `Server Jobs` is the vapor/queues Live
+        // conformance of this engine-free surface: the adapters bridge `Scheduler.Job` /
+        // `Scheduler.Scheduled` onto the Queues engine, and the installer replays a
+        // `Scheduler.Registry` onto the running application.
+        .package(url: "https://github.com/swift-foundations/swift-scheduler.git", branch: "main"),
     ],
     targets: [
         // MARK: - Server Shared (internal namespace + the institute L2 HTTP vocabulary re-export)
@@ -82,6 +87,7 @@ let package = Package(
             dependencies: [
                 "Server Shared",
                 "Server",
+                .product(name: "Scheduler", package: "swift-scheduler"),
                 .product(name: "Queues", package: "queues"),
                 .product(name: "QueuesRedisDriver", package: "queues-redis-driver"),
                 .product(name: "NIOCore", package: "swift-nio"),
@@ -123,7 +129,11 @@ let package = Package(
         ),
         .testTarget(
             name: "Server Jobs Tests",
-            dependencies: ["Server Jobs", "Server Shared"],
+            dependencies: [
+                "Server Jobs",
+                "Server Shared",
+                .product(name: "Scheduler", package: "swift-scheduler"),
+            ],
             path: "Tests/Server Jobs Tests"
         ),
         .testTarget(

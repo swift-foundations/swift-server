@@ -9,13 +9,11 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Server_Shared
+internal import Scheduler
 
 internal import Queues
 
-private typealias Server = Server_Shared.Server
-
-extension Server.Jobs.Schedule {
+extension Scheduler.Schedule {
     /// Applies this cadence onto the engine's schedule builder.
     func apply(to builder: ScheduleBuilder) {
         switch self {

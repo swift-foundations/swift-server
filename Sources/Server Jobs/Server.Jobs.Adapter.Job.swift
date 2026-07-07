@@ -10,13 +10,14 @@
 // ===----------------------------------------------------------------------===//
 
 internal import Server_Shared
+internal import Scheduler
 
 internal import Queues
 
 extension Server.Jobs.Adapter {
-    /// Bridges a ``Server/Jobs/Job`` onto the engine's `AsyncJob`, keyed by the wrapped job's name
+    /// Bridges a ``Scheduler/Job`` onto the engine's `AsyncJob`, keyed by the wrapped job's name
     /// so registration and dispatch resolve to the same entry.
-    struct Job<Wrapped: Server.Jobs.Job> {
+    struct Job<Wrapped: Scheduler.Job> {
         let wrapped: Wrapped
 
         init(wrapped: Wrapped) {

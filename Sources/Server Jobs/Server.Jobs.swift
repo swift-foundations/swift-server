@@ -12,12 +12,16 @@
 public import Server_Shared
 
 extension Server {
-    /// The background-jobs membrane: job and scheduled-job abstractions over vapor/queues, with a
-    /// Redis backend and optional in-process worker execution.
+    /// The vapor/queues Live conformance of the L3 `Scheduler` interface.
     ///
-    /// Models the first consumer's three jobs — an hourly scheduled poll, a scheduled cache
-    /// refresh, and on-demand queued bulk work — as ``Server/Jobs/Job`` (payload-carrying,
-    /// dispatched) and ``Server/Jobs/Scheduled`` (cadence-owning) conformers accumulated in a
-    /// ``Server/Jobs/Registry`` and installed onto a running `Server.Application`.
+    /// `Scheduler` (swift-scheduler) defines the engine-free jobs surface — `Scheduler.Job`,
+    /// `Scheduler.Scheduled`, `Scheduler.Schedule`, `Scheduler.Registry`, and the
+    /// `Scheduler.Installing` seam. `Server.Jobs` is the backing that makes it run: internal
+    /// adapters bridge a `Scheduler.Job` / `Scheduler.Scheduled` onto the Queues engine's
+    /// `AsyncJob` / `AsyncScheduledJob`, and the `Server.Jobs.Installer` conforms to
+    /// `Scheduler.Installing` — converting each typed job the registry replays into the Queues
+    /// adapters on the running `Server.Application`, with a Redis backend and optional in-process
+    /// worker execution. The engine stays quarantined behind this membrane; nothing engine-typed
+    /// escapes through the public surface (see `Server.Application` register / dispatch).
     public enum Jobs {}
 }
