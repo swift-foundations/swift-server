@@ -22,16 +22,18 @@ extension Server.PostgreSQL {
     /// backs ``SQL/Value/jsonb(_:)``.
     struct JSONBParameter: PostgresNonThrowingEncodable {
         let bytes: [UInt8]
+    }
+}
 
-        static var psqlType: PostgresDataType { .jsonb }
-        static var psqlFormat: PostgresFormat { .binary }
+extension Server.PostgreSQL.JSONBParameter {
+    static var psqlType: PostgresDataType { .jsonb }
+    static var psqlFormat: PostgresFormat { .binary }
 
-        func encode<JSONEncoder: PostgresJSONEncoder>(
-            into byteBuffer: inout ByteBuffer,
-            context: PostgresEncodingContext<JSONEncoder>
-        ) {
-            byteBuffer.writeInteger(UInt8(0x01))
-            byteBuffer.writeBytes(bytes)
-        }
+    func encode<JSONEncoder: PostgresJSONEncoder>(
+        into byteBuffer: inout ByteBuffer,
+        context: PostgresEncodingContext<JSONEncoder>
+    ) {
+        byteBuffer.writeInteger(UInt8(0x01))
+        byteBuffer.writeBytes(bytes)
     }
 }

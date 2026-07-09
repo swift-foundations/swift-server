@@ -141,7 +141,7 @@ extension Server_Shared.Server.Application {
     ) async -> Vapor.Response {
         let request = Server.Request(vaporRequest)
         let response: Server.Response
-        do {
+        do throws(Server.Error) {
             response = try await responder(request)
         } catch {
             response = Server.Response(

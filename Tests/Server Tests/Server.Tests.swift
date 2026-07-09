@@ -17,7 +17,7 @@ import Testing
 
 // L2 delta: RFC 9110's `HTTP.Status` names these `isSuccessful`/`isRedirection` (the dissolved
 // prototype spelled them `isSuccess`/`isRedirect`) — same semantics, spec-owned names.
-@Test func statusSuccessAndRedirectRanges() {
+@Test func `status Success And Redirect Ranges`() {
     #expect(HTTP.Status.ok.isSuccessful)
     #expect(HTTP.Status.created.isSuccessful)
     #expect(HTTP.Status.seeOther.isRedirection)
@@ -30,7 +30,7 @@ import Testing
 // L2 delta: `HTTP.Method` is an open method set (RawRepresentable, not a closed enum) and its
 // `CaseIterable.allCases` enumerates the 9 RFC 9110 §9.3 + RFC 5789 standard methods (the
 // dissolved prototype's closed enum modeled only 7 — no CONNECT/TRACE).
-@Test func methodRawValuesAndCases() {
+@Test func `method Raw Values And Cases`() {
     #expect(HTTP.Method.get.rawValue == "GET")
     #expect(HTTP.Method.delete.rawValue == "DELETE")
     #expect(HTTP.Method.allCases.count == 9)
@@ -38,14 +38,14 @@ import Testing
 
 // MARK: - Headers (case-insensitive, order-preserving)
 
-@Test func headersLookupIsCaseInsensitive() {
+@Test func `headers Lookup Is Case Insensitive`() {
     var headers = HTTP.Headers()
     headers.add(name: "Content-Type", value: "text/html")
     #expect(headers.first(name: "content-type") == "text/html")
     #expect(headers.first(name: "CONTENT-TYPE") == "text/html")
 }
 
-@Test func headersReplaceCollapsesDuplicates() {
+@Test func `headers Replace Collapses Duplicates`() {
     var headers = HTTP.Headers()
     headers.add(name: "X-Tag", value: "a")
     headers.add(name: "x-tag", value: "b")
@@ -56,31 +56,31 @@ import Testing
 
 // MARK: - Response building
 
-@Test func htmlResponseSetsBodyAndContentType() {
+@Test func `html Response Sets Body And Content Type`() {
     let response = Server.Response.html("<h1>hi</h1>")
     #expect(response.status == .ok)
     #expect(response.headers.first(name: "content-type")?.contains("text/html") == true)
     #expect(String(decoding: response.body, as: UTF8.self) == "<h1>hi</h1>")
 }
 
-@Test func jsonStringResponseSetsContentType() {
+@Test func `json String Response Sets Content Type`() {
     let response = Server.Response.json(#"{"ok":true}"#)
     #expect(response.headers.first(name: "content-type")?.contains("application/json") == true)
     #expect(String(decoding: response.body, as: UTF8.self) == #"{"ok":true}"#)
 }
 
-@Test func redirectResponseUsesSeeOtherAndLocation() {
+@Test func `redirect Response Uses See Other And Location`() {
     let response = Server.Response.redirect(to: "/login")
     #expect(response.status == .seeOther)
     #expect(response.headers.first(name: "location") == "/login")
 }
 
-@Test func permanentRedirectUses301() {
+@Test func `permanent Redirect Uses301`() {
     let response = Server.Response.redirect(to: "/new", permanent: true)
     #expect(response.status.code == 301)
 }
 
-@Test func bareStatusResponseHasNoBody() {
+@Test func `bare Status Response Has No Body`() {
     let response = Server.Response.status(.noContent)
     #expect(response.status.code == 204)
     #expect(response.body.isEmpty)
@@ -88,7 +88,7 @@ import Testing
 
 // MARK: - Request
 
-@Test func requestJoinsPathAndDecodesBody() {
+@Test func `request Joins Path And Decodes Body`() {
     let request = Server.Request(method: .get, path: ["analytics", "user"], body: Array("data".utf8))
     #expect(request.pathString == "/analytics/user")
     #expect(request.bodyString == "data")
@@ -96,7 +96,7 @@ import Testing
 
 // MARK: - Environment
 
-@Test func environmentTypedAccessors() {
+@Test func `environment Typed Accessors`() {
     let environment = Server.Environment(
         name: "test",
         variables: ["PORT": "8080", "DEBUG": "true", "FLAG": "off", "NAME": "repotraffic"]
@@ -110,7 +110,7 @@ import Testing
 
 // MARK: - Error → status mapping
 
-@Test func errorMapsToStatus() {
+@Test func `error Maps To Status`() {
     #expect(Server.Error.notFound.status == .notFound)
     #expect(Server.Error.unauthorized.status.code == 401)
     #expect(Server.Error.badRequest("bad").status == .badRequest)
@@ -120,7 +120,7 @@ import Testing
 
 // MARK: - Route model
 
-@Test func routeModelCarriesMethodPathAndResponder() async throws {
+@Test func `route Model Carries Method Path And Responder`() async throws {
     let route = Server.Route(method: .post, path: ["webhook", "stripe"]) { _ in .status(.ok) }
     #expect(route.method == .post)
     #expect(route.path == ["webhook", "stripe"])
@@ -132,6 +132,9 @@ import Testing
 
 private struct TagMiddleware: Server.Middleware {
     let value: String
+}
+
+extension TagMiddleware {
     func intercept(
         _ request: Server.Request,
         next: Server.Responder
@@ -142,7 +145,7 @@ private struct TagMiddleware: Server.Middleware {
     }
 }
 
-@Test func middlewareChainWrapsResponderOutermostFirst() async throws {
+@Test func `middleware Chain Wraps Responder Outermost First`() async throws {
     let base: Server.Responder = { _ in .text("hi") }
     let middleware: [any Server.Middleware] = [TagMiddleware(value: "a"), TagMiddleware(value: "b")]
     let responder = middleware.chain(around: base)

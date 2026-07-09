@@ -28,14 +28,16 @@ extension Server.Jobs {
         init(application: Vapor.Application) {
             self.application = application
         }
+    }
+}
 
-        func install<J: Scheduler.Job>(_ job: J) {
-            application.queues.add(Server.Jobs.Adapter.Job(wrapped: job))
-        }
+extension Server.Jobs.Installer {
+    func install<J: Scheduler.Job>(_ job: J) {
+        application.queues.add(Server.Jobs.Adapter.Job(wrapped: job))
+    }
 
-        func install<S: Scheduler.Scheduled>(_ scheduled: S) {
-            let builder = application.queues.schedule(Server.Jobs.Adapter.Scheduled(wrapped: scheduled))
-            S.schedule.apply(to: builder)
-        }
+    func install<S: Scheduler.Scheduled>(_ scheduled: S) {
+        let builder = application.queues.schedule(Server.Jobs.Adapter.Scheduled(wrapped: scheduled))
+        S.schedule.apply(to: builder)
     }
 }

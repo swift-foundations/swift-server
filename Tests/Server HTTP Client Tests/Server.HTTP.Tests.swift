@@ -15,7 +15,7 @@ import Testing
 
 // MARK: - Request building
 
-@Test func requestDefaultsToGetWithEmptyBody() {
+@Test func `request Defaults To Get With Empty Body`() {
     let request = Server.HTTP.Request(url: "https://example.com/api")
     #expect(request.method == .get)
     #expect(request.url == "https://example.com/api")
@@ -23,7 +23,7 @@ import Testing
     #expect(request.headers.isEmpty)
 }
 
-@Test func requestCarriesMethodHeadersAndBody() {
+@Test func `request Carries Method Headers And Body`() {
     let request = Server.HTTP.Request(
         method: .post,
         url: "https://example.com",
@@ -42,7 +42,7 @@ private struct SamplePayload: Encodable {
     let count: Int
 }
 
-@Test func jsonRequestSetsBodyAndContentType() throws {
+@Test func `json Request Sets Body And Content Type`() throws {
     let request = try Server.HTTP.Request.json(
         .post,
         url: "https://example.com/webhook",
@@ -56,13 +56,13 @@ private struct SamplePayload: Encodable {
 
 // MARK: - Response
 
-@Test func responseBodyStringDecodesUTF8() {
+@Test func `response Body String Decodes UTF8`() {
     let response = Server.HTTP.Response(status: .ok, body: Array("hello".utf8))
     #expect(response.status == .ok)
     #expect(response.bodyString == "hello")
 }
 
-@Test func responseJSONRoundTrip() throws {
+@Test func `response JSON Round Trip`() throws {
     struct Body: Codable, Equatable { let value: Int }
     let request = try Server.HTTP.Request.json(.post, url: "https://x", value: Body(value: 42))
     let response = Server.HTTP.Response(status: .ok, body: request.body)
