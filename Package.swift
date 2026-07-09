@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "Server PostgreSQL", targets: ["Server PostgreSQL"]),
         .library(name: "Server Jobs", targets: ["Server Jobs"]),
         .library(name: "Server HTTP Client", targets: ["Server HTTP Client"]),
+        .library(name: "Server Dependencies Integration", targets: ["Server Dependencies Integration"]),
     ],
     dependencies: [
         // External server engines — quarantined behind the membrane, imported internally only.
@@ -41,6 +42,16 @@ let package = Package(
         // `Scheduler.Scheduled` onto the Queues engine, and the installer replays a
         // `Scheduler.Registry` onto the running application.
         .package(url: "https://github.com/swift-foundations/swift-scheduler.git", branch: "main"),
+        // Integration-only dep — imported by the single opt-in `Server Dependencies Integration`
+        // target that vends the ambient `\.request` / `\.logger` dependency keys and the
+        // per-request injection middleware. `traits: ["Clocks"]` mirrors swift-sql's declaration
+        // (the graph-validated trait set); the institute `Dependency` façade re-namespaces
+        // point-free's dependency machinery under `Dependency.Values` / `Dependency.Key`.
+        .package(
+            url: "https://github.com/swift-foundations/swift-dependencies.git",
+            branch: "main",
+            traits: ["Clocks"]
+        ),
     ],
     targets: [
         // MARK: - Server Shared (internal namespace + the institute L2 HTTP vocabulary re-export)
@@ -108,6 +119,18 @@ let package = Package(
             path: "Sources/Server HTTP Client"
         ),
 
+        // MARK: - Server Dependencies Integration (ambient \.request / \.logger + injection seam)
+
+        .target(
+            name: "Server Dependencies Integration",
+            dependencies: [
+                "Server",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "Logging", package: "swift-log"),
+            ],
+            path: "Sources/Server Dependencies Integration"
+        ),
+
         // MARK: - Tests
 
         .testTarget(
@@ -140,6 +163,17 @@ let package = Package(
             name: "Server HTTP Client Tests",
             dependencies: ["Server HTTP Client", "Server Shared"],
             path: "Tests/Server HTTP Client Tests"
+        ),
+        .testTarget(
+            name: "Server Dependencies Integration Tests",
+            dependencies: [
+                "Server Dependencies Integration",
+                "Server",
+                "Server Shared",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "Logging", package: "swift-log"),
+            ],
+            path: "Tests/Server Dependencies Integration Tests"
         ),
     ],
     swiftLanguageModes: [.v6]
