@@ -41,10 +41,17 @@ extension Server {
     ///    seeds the graph before serving. Long-lived dependencies (database, logger label, router)
     ///    are set once here.
     /// 2. **Request scope.** ``Server/Dependencies/Middleware``, installed first in the middleware
-    ///    stack passed to `application.run(middleware:…)`, layers the per-request overrides
-    ///    (`\.request`, a request-scoped `\.logger`) inside the boot scope for the duration of each
-    ///    responder invocation. The two scopes compose: the request scope inherits every boot-scope
-    ///    value and shadows only what it re-assigns.
+    ///    stack passed to `application.run(middleware:…)`, opens the per-request scope
+    ///    (`\.request`, a request-scoped `\.logger`) for the duration of each responder
+    ///    invocation. CORRECTED (2026-07-13): the two scopes do **not** compose — the responder
+    ///    runs on its own NIO task, outside the boot scope's task-local tree (severed boundary;
+    ///    production-verified: a scheduled tick resolving an unconfigured `\.defaultDatabase`
+    ///    default killed a serve process, and per-request re-injection was required for request
+    ///    handlers to see boot values at all). The middleware MUST therefore RE-APPLY the
+    ///    process-wide baseline (the app's composition root) and then layer `\.request` into that
+    ///    same scope — per-boundary re-application, as specified in the ratified design
+    ///    `Workspace/handoffs/DECISIONS-pass2/di-composition-root-design.md` §§2, 4.1
+    ///    (boundary table; `Boiler.execute(dependencies:)` is the reference implementation).
     ///
     /// The app-cutover wave consumes this note to build the boot wrapper; nothing in this module
     /// presumes a specific boot entry point, so it stays engine- and application-agnostic.
