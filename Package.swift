@@ -44,13 +44,11 @@ let package = Package(
         .package(url: "https://github.com/swift-foundations/swift-scheduler.git", branch: "main"),
         // Integration-only dep — imported by the single opt-in `Server Dependencies Integration`
         // target that vends the ambient `\.request` / `\.logger` dependency keys and the
-        // per-request injection middleware. `traits: ["Clocks"]` mirrors swift-sql's declaration
-        // (the graph-validated trait set); the institute `Dependency` façade re-namespaces
+        // per-request injection middleware. The institute `Dependency` façade re-namespaces
         // point-free's dependency machinery under `Dependency.Values` / `Dependency.Key`.
         .package(
             url: "https://github.com/swift-foundations/swift-dependencies.git",
-            branch: "main",
-            traits: ["Clocks"]
+            branch: "main"
         ),
     ],
     targets: [
