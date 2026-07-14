@@ -36,7 +36,7 @@ let package = Package(
         // conformance of these engine-free surfaces (institute-server-stack-architecture.md Q2–Q4):
         // the executor conforms to `SQL.Database`, and migrations run via `SQL.Migrator`.
         .package(url: "https://github.com/swift-foundations/swift-sql.git", branch: "main"),
-        .package(url: "https://github.com/swift-foundations/swift-migrations.git", branch: "main"),
+        .package(url: "https://github.com/swift-foundations/swift-sql-migrations.git", branch: "main"),
         // Institute L3 background-jobs interface. `Server Jobs` is the vapor/queues Live
         // conformance of this engine-free surface: the adapters bridge `Scheduler.Job` /
         // `Scheduler.Scheduled` onto the Queues engine, and the installer replays a
@@ -81,7 +81,7 @@ let package = Package(
             dependencies: [
                 "Server Shared",
                 .product(name: "SQL", package: "swift-sql"),
-                .product(name: "Migrations", package: "swift-migrations"),
+                .product(name: "Migrations", package: "swift-sql-migrations"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "NIOSSL", package: "swift-nio-ssl"),
