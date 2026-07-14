@@ -40,7 +40,10 @@ extension Server.Dependencies {
             var requestLogger = logger
             requestLogger[metadataKey: "request.path"] = .string(request.pathString)
             return try await withDependencies {
-                $0.request = request
+                // Binding the container binds BOTH spellings: the flat `\.request` is an alias onto
+                // `\.server.request`, one storage slot. Consumers still on `@Dependency(\.request)`
+                // observe this write unchanged, so nothing breaks while the migration is in flight.
+                $0.server.request = request
                 $0.logger = requestLogger
             } operation: { () async throws(Server.Error) -> Server.Response in
                 try await next(request)
