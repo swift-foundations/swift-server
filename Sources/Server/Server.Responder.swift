@@ -9,7 +9,7 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server {
     /// The core request→response seam: an async function that turns a typed request context into

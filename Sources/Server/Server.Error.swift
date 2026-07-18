@@ -9,7 +9,7 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server {
     /// The typed error domain thrown by every operation on the core transport surface.

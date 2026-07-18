@@ -9,147 +9,69 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
-// `package import`: the underlying Vapor.Application is exposed at PACKAGE scope only, so the
-// sibling "Server Jobs" target can install a job registry onto the running app's queues. It never
-// crosses the package boundary — the public surface stays engine-free.
-package import Vapor
+public import HTTP_Standard
 
-// Vapor also declares a `public protocol Server`, which collides with our `Server_Shared.Server`
-// namespace inside this file. Public/package signatures below therefore spell the namespace out as
-// `Server_Shared.Server`; the file-private alias disambiguates the (non-API) implementation bodies.
-private typealias Server = Server_Shared.Server
+extension Server {
+    /// The engine-neutral application lifecycle and routing contract.
+    public final class Application: @unchecked Sendable {
+        public let configuration: Server.Configuration
+        private var routes: [Server.Route] = []
+        private var responder: Server.Responder?
+        private var isRunning = false
+        var jobInstaller: Server.Jobs.Installer?
 
-extension Server_Shared.Server {
-    /// The application: the membrane's bootstrap, lifecycle, and routing owner.
-    ///
-    /// Create one with ``make(configuration:)``, register discrete routes with ``register(_:)``
-    /// and/or serve a pointfree-style router with ``run(middleware:configure:decode:respond:)``,
-    /// and tear it down with ``shutdown()``. The underlying engine (`Vapor.Application`) is held at
-    /// `package` scope for sibling membrane targets and never surfaces publicly.
-    public final class Application {
-        package let vapor: Vapor.Application
-        public let configuration: Server_Shared.Server.Configuration
-
-        package init(vapor: Vapor.Application, configuration: Server_Shared.Server.Configuration) {
-            self.vapor = vapor
+        public init(configuration: Server.Configuration = .init()) {
             self.configuration = configuration
         }
-    }
-}
 
-extension Server_Shared.Server.Application {
-    /// Boots an application from configuration. Convenience spelling of ``make(configuration:)``.
-    public convenience init(
-        configuration: Server_Shared.Server.Configuration = .init()
-    ) async throws(Server_Shared.Server.Error) {
-        let application = try await Server.Application.make(configuration: configuration)
-        self.init(vapor: application.vapor, configuration: application.configuration)
-    }
-
-    /// Boots an application: constructs the engine, applies host/port/body-size configuration, and
-    /// returns a ready-but-not-yet-serving application.
-    public static func make(
-        configuration: Server_Shared.Server.Configuration = .init()
-    ) async throws(Server_Shared.Server.Error) -> Server_Shared.Server.Application {
-        let environment: Vapor.Environment
-        switch configuration.environment.name {
-        case "production": environment = .production
-        case "testing", "test": environment = .testing
-        default: environment = .development
+        public static func make(
+            configuration: Server.Configuration = .init()
+        ) -> Server.Application {
+            Server.Application(configuration: configuration)
         }
 
-        let vapor: Vapor.Application
-        do {
-            vapor = try await Vapor.Application.make(environment)
-        } catch {
-            throw Server.Error.engine("failed to start application: \(error)")
+        /// Registers literal routes in registration order.
+        public func register(_ routes: [Server.Route]) {
+            self.routes.append(contentsOf: routes)
         }
 
-        vapor.http.server.configuration.hostname = configuration.hostname
-        vapor.http.server.configuration.port = configuration.port
-        vapor.routes.defaultMaxBodySize = ByteCount(value: configuration.maximumBodySize)
-
-        return Server.Application(vapor: vapor, configuration: configuration)
-    }
-}
-
-extension Server_Shared.Server.Application {
-    /// Registers discrete routes (the lightweight `Server.Route` model) on the engine's router.
-    ///
-    /// Use for endpoints wired individually — webhooks, well-known documents, static handlers.
-    public func register(_ routes: [Server_Shared.Server.Route]) {
-        for route in routes {
-            let respond = route.respond
-            vapor.on(route.method.vapor, route.path.map { PathComponent(stringLiteral: $0) }) {
-                (vaporRequest: Vapor.Request) async -> Vapor.Response in
-                await Server.Application.dispatch(vaporRequest, to: respond)
+        // The middleware collection is intentionally heterogeneous so distinct conformers can be
+        // composed in registration order.
+        /// Installs the pure responder pipeline and marks the application running.
+        ///
+        /// A transport backing owns the actual accept loop; this package intentionally owns only
+        /// the lifecycle contract and request/response dispatch seam.
+        public func run<Route: Sendable>(
+            // swiftlint:disable:next no_any_protocol_existential
+            middleware: [any Server.Middleware] = [],
+            configure: @Sendable (Server.Application) async throws(Server.Error) -> Void = { _ in },
+            decode: @escaping @Sendable (Server.Request) async throws(Server.Error) -> Route,
+            respond: @escaping @Sendable (Route) async throws(Server.Error) -> Server.Response
+        ) async throws(Server.Error) {
+            try await configure(self)
+            let base: Server.Responder = { request in
+                try await respond(try await decode(request))
             }
+            responder = middleware.chain(around: base)
+            isRunning = true
         }
-    }
 
-    // Deliberately heterogeneous middleware stack: the array holds distinct
-    // concrete Middleware conformers; an existential element type is the design.
-    // swiftlint:disable no_any_protocol_existential
-    /// Serves a pointfree-style router: `decode` turns each request into the consumer's route
-    /// value, `respond` turns that route value into a response, and `middleware` wraps the pair.
-    /// The membrane never parses URLs itself — a catch-all forwards every request to `decode`.
-    ///
-    /// Blocks until the server shuts down.
-    public func run<Route: Sendable>(
-        middleware: [any Server_Shared.Server.Middleware] = [],
-        configure: @Sendable (Server_Shared.Server.Application) async throws(Server_Shared.Server.Error) -> Void = { _ in },
-        decode: @escaping @Sendable (Server_Shared.Server.Request) async throws(Server_Shared.Server.Error) -> Route,
-        respond: @escaping @Sendable (Route) async throws(Server_Shared.Server.Error) -> Server_Shared.Server.Response
-    ) async throws(Server_Shared.Server.Error) {
-        // swiftlint:enable no_any_protocol_existential
-        try await configure(self)
-
-        let base: Server.Responder = { (request: Server.Request) async throws(Server.Error) -> Server.Response in
-            let route = try await decode(request)
-            return try await respond(route)
-        }
-        let responder = middleware.chain(around: base)
-
-        for method in HTTP.Method.allCases {
-            vapor.on(method.vapor, "**") { (vaporRequest: Vapor.Request) async -> Vapor.Response in
-                await Server.Application.dispatch(vaporRequest, to: responder)
+        /// Dispatches a request through a registered literal route or the installed responder.
+        public func response(
+            to request: Server.Request
+        ) async throws(Server.Error) -> Server.Response {
+            guard isRunning else { throw Server.Error.engine("application is not running") }
+            if let route = routes.last(where: { $0.method == request.method && $0.path == request.path }) {
+                return try await route.respond(request)
             }
+            guard let responder else { throw Server.Error.notFound }
+            return try await responder(request)
         }
 
-        do {
-            try await vapor.execute()
-        } catch {
-            throw Server.Error.engine("server execution failed: \(error)")
+        /// Stops the pure lifecycle contract. Transport backings perform their own teardown.
+        public func shutdown() {
+            isRunning = false
+            responder = nil
         }
-    }
-
-    /// Gracefully shuts the application down.
-    public func shutdown() async throws(Server_Shared.Server.Error) {
-        do {
-            try await vapor.asyncShutdown()
-        } catch {
-            throw Server.Error.engine("shutdown failed: \(error)")
-        }
-    }
-
-    /// Bridges an engine request through a responder and back to an engine response, mapping a
-    /// thrown `Server.Error` onto its status so the handler never leaks an error to the engine.
-    private static func dispatch(
-        _ vaporRequest: Vapor.Request,
-        to responder: Server.Responder
-    ) async -> Vapor.Response {
-        let request = Server.Request(vaporRequest)
-        let response: Server.Response
-        do throws(Server.Error) {
-            response = try await responder(request)
-        } catch {
-            response = Server.Response(
-                status: error.status,
-                headers: HTTP.Headers(["Content-Type": "text/plain; charset=utf-8"]),
-                body: Array(error.message.utf8)
-            )
-        }
-        return response.vapor()
     }
 }

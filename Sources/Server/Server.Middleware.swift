@@ -9,7 +9,7 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server {
     /// A hook that intercepts a request on the way in and the response on the way out.

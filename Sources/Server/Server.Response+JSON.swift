@@ -13,7 +13,7 @@
 // The public parameter is a stdlib `Encodable`, not a Foundation type; only the internal
 // implementation touches Foundation. An institute-native JSON serializer replaces this later.
 private import Foundation
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server.Response {
     /// An `application/json` response encoding a value with `JSONEncoder`.

@@ -9,13 +9,13 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server {
     /// A typed, engine-free snapshot of an inbound HTTP request handed to a `Server.Responder`.
     ///
-    /// This is the value the consumer's route decoder inspects. It carries no Vapor type; the
-    /// internal `Server.Request(vapor:)` bridge produces it at the membrane boundary.
+    /// This is the value the consumer's route decoder inspects. Transport integrations construct
+    /// it at their boundary.
     public struct Request: Sendable {
         public let method: HTTP.Method
         /// Path components with empty segments removed: `/analytics/user` → `["analytics", "user"]`.

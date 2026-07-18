@@ -14,7 +14,7 @@
 // Foundation types; only the internal implementation touches Foundation, exactly as the sibling
 // `Server.Response+JSON.swift` does. An institute-native JSON serializer replaces this later.
 private import Foundation
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server.Response {
     /// An `application/json` response wrapping `value` in the standard envelope

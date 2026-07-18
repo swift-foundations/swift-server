@@ -11,7 +11,7 @@
 
 import Foundation
 import Server
-import Server_Shared
+import HTTP_Standard
 import Testing
 
 // A wire-shaped decoder mirroring the `{ success, data, message, timestamp }` envelope, used to

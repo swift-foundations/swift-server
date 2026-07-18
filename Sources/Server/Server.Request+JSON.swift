@@ -13,7 +13,7 @@
 // The public parameter/return is a stdlib `Decodable`, not a Foundation type; only the
 // internal implementation touches Foundation.
 private import Foundation
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server.Request {
     /// Decodes the request body as JSON into the given `Decodable` type.

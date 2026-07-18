@@ -9,7 +9,7 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server {
     /// A typed, engine-free HTTP response returned by a `Server.Responder`.

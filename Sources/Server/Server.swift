@@ -9,10 +9,5 @@
 //
 // ===----------------------------------------------------------------------===//
 
-internal import Server_Shared
-
-extension Server.Jobs {
-    /// Internal namespace for the type-erasing adapters that bridge institute jobs onto the
-    /// engine's `AsyncJob` / `AsyncScheduledJob` protocols.
-    enum Adapter {}
-}
+/// The root namespace for the pure Swift Institute server contracts.
+public enum Server {}

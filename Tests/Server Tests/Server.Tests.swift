@@ -10,7 +10,7 @@
 // ===----------------------------------------------------------------------===//
 
 import Server
-import Server_Shared
+import HTTP_Standard
 import Testing
 
 // MARK: - Status vocabulary
@@ -95,18 +95,6 @@ import Testing
 }
 
 // MARK: - Environment
-
-@Test func `environment Typed Accessors`() {
-    let environment = Server.Environment(
-        name: "test",
-        variables: ["PORT": "8080", "DEBUG": "true", "FLAG": "off", "NAME": "repotraffic"]
-    )
-    #expect(environment.int("PORT") == 8080)
-    #expect(environment.bool("DEBUG") == true)
-    #expect(environment.bool("FLAG") == false)
-    #expect(environment.string("NAME") == "repotraffic")
-    #expect(environment["MISSING"] == nil)
-}
 
 // MARK: - Error → status mapping
 

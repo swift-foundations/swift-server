@@ -10,7 +10,7 @@
 // ===----------------------------------------------------------------------===//
 
 import Scheduler
-import Server_Jobs
+import Server
 import Testing
 
 // The first consumer's three jobs, modeled against the L3 Scheduler interface that `Server Jobs`
@@ -80,4 +80,12 @@ extension CacheRefreshJob {
 @Test func `driver And Execution Cases`() {
     #expect(Scheduler.Driver.redis(url: "redis://localhost:6379") == .redis(url: "redis://localhost:6379"))
     #expect(Scheduler.Execution.inProcess != .workers)
+}
+
+@Test func `application Registers And Dispatches Jobs`() async throws {
+    var registry = Scheduler.Registry()
+    registry.register(BulkTrackJob())
+    let application = Server.Application()
+    application.register(registry)
+    try await application.dispatch(BulkTrackJob.self, .init(identityId: "id", statusId: "status"))
 }

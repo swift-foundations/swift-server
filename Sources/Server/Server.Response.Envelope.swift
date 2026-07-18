@@ -9,7 +9,7 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
+public import HTTP_Standard
 
 extension Server.Response {
     /// The standard API response envelope serialized by ``json(success:data:message:status:)`` and

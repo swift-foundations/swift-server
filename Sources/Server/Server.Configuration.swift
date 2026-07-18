@@ -9,23 +9,23 @@
 //
 // ===----------------------------------------------------------------------===//
 
-public import Server_Shared
+public import Environment
 
 extension Server {
     /// The configuration a `Server.Application` binds at boot.
     public struct Configuration: Sendable {
-        public var hostname: String
+        public var hostname: Swift.String
         public var port: Int
         /// The maximum accepted request body size, in bytes. Defaults to 10 MiB, matching the
         /// first consumer's `app.routes.defaultMaxBodySize = "10mb"`.
         public var maximumBodySize: Int
-        public var environment: Server.Environment
+        public var environment: Environment.Snapshot
 
         public init(
-            hostname: String = "127.0.0.1",
+            hostname: Swift.String = "127.0.0.1",
             port: Int = 8080,
             maximumBodySize: Int = 10 * 1024 * 1024,
-            environment: Server.Environment = .detect()
+            environment: Environment.Snapshot = .effective()
         ) {
             self.hostname = hostname
             self.port = port
