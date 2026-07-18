@@ -9,17 +9,17 @@
 //
 // ===----------------------------------------------------------------------===//
 
-// Foundation exception: JSONDecoder is the v0 deserializer for the request-body convenience.
-// The public parameter/return is a stdlib `Decodable`, not a Foundation type; only the
-// internal implementation touches Foundation.
-private import Foundation
-public import HTTP_Standard
+private import Byte_Primitive
+public import JSON
+public import Server
 
 extension Server.Request {
-    /// Decodes the request body as JSON into the given `Decodable` type.
-    public func json<Value: Decodable>(as type: Value.Type = Value.self) throws(Server.Error) -> Value {
+    /// Decodes the request body as JSON into the given `JSON.Serializable` type.
+    public func json<Value: JSON.Serializable>(
+        as type: Value.Type = Value.self
+    ) throws(Server.Error) -> Value {
         do {
-            return try JSONDecoder().decode(Value.self, from: Data(body))
+            return try Value(jsonBytes: body.map(Byte.init))
         } catch {
             throw Server.Error.decoding("\(Value.self)")
         }

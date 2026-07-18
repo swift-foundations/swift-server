@@ -9,10 +9,13 @@ let package = Package(
     ],
     products: [
         .library(name: "Server", targets: ["Server"]),
+        .library(name: "Server JSON", targets: ["Server JSON"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swift-standards/swift-http-standard.git", branch: "main"),
+        .package(url: "https://github.com/swift-primitives/swift-byte-primitives.git", branch: "main"),
         .package(url: "https://github.com/swift-foundations/swift-environment.git", branch: "main"),
+        .package(url: "https://github.com/swift-foundations/swift-json.git", branch: "main"),
         .package(url: "https://github.com/swift-foundations/swift-scheduler.git", branch: "main"),
     ],
     targets: [
@@ -28,6 +31,18 @@ let package = Package(
             path: "Sources/Server"
         ),
 
+        // MARK: - JSON integration
+
+        .target(
+            name: "Server JSON",
+            dependencies: [
+                "Server",
+                .product(name: "Byte Primitive", package: "swift-byte-primitives"),
+                .product(name: "JSON", package: "swift-json"),
+            ],
+            path: "Sources/Server JSON"
+        ),
+
         // MARK: - Tests
 
         .testTarget(
@@ -39,6 +54,16 @@ let package = Package(
             name: "Server Jobs Tests",
             dependencies: ["Server", .product(name: "Scheduler", package: "swift-scheduler")],
             path: "Tests/Server Jobs Tests"
+        ),
+        .testTarget(
+            name: "Server JSON Tests",
+            dependencies: [
+                "Server",
+                "Server JSON",
+                .product(name: "HTTP Standard", package: "swift-http-standard"),
+                .product(name: "JSON", package: "swift-json"),
+            ],
+            path: "Tests/Server JSON Tests"
         ),
     ],
     swiftLanguageModes: [.v6]
