@@ -106,6 +106,21 @@ import Testing
     #expect(Server.Error.internalError("x").status == .internalServerError)
 }
 
+@Test func `not Implemented Preserves Reason And Maps To501`() {
+    let reason = "route /history is not implemented\n🙂"
+    let error = Server.Error.notImplemented(reason)
+
+    guard case .notImplemented(let payload) = error else {
+        Issue.record("Expected Server.Error.notImplemented")
+        return
+    }
+
+    #expect(payload == reason)
+    #expect(error.message == reason)
+    #expect(error.status == .notImplemented)
+    #expect(error.status.code == 501)
+}
+
 // MARK: - Route model
 
 @Test func `route Model Carries Method Path And Responder`() async throws {

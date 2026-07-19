@@ -31,6 +31,8 @@ extension Server {
         case payloadTooLarge
         /// A value could not be decoded from the request; the string names the value (422).
         case decoding(String)
+        /// The requested operation is not implemented; the string preserves the supplied reason (501).
+        case notImplemented(String)
         /// A value could not be encoded into the response; the string names the value (500).
         case encoding(String)
         /// The wrapped engine failed; the string carries the engine's description (500).
@@ -57,6 +59,7 @@ extension Server.Error {
         case .forbidden: .forbidden
         case .payloadTooLarge: .contentTooLarge
         case .decoding: .unprocessableContent
+        case .notImplemented: .notImplemented
         case .encoding: .internalServerError
         case .engine: .internalServerError
         case .unavailable: .serviceUnavailable
@@ -73,6 +76,7 @@ extension Server.Error {
         case .forbidden: "Forbidden"
         case .payloadTooLarge: "Payload too large"
         case .decoding(let value): "Failed to decode \(value)"
+        case .notImplemented(let reason): reason
         case .encoding(let value): "Failed to encode \(value)"
         case .engine(let description): "Engine error: \(description)"
         case .unavailable(let service): "Unavailable: \(service)"
