@@ -19,14 +19,16 @@ extension Server {
     /// `catch AbortError where status == .unauthorized` pattern without an engine's error type
     /// leaking through the membrane.
     public enum Error: Swift.Error, Sendable {
-        /// The requested resource does not exist (404).
-        case notFound
+        /// The requested resource does not exist; the string preserves the supplied reason (404).
+        case notFound(String)
         /// The request was malformed; the string describes what (400).
         case badRequest(String)
         /// Authentication is required or failed (401).
         case unauthorized
-        /// The caller is authenticated but not permitted (403).
-        case forbidden
+        /// Payment is required to access the resource; the string preserves the supplied reason (402).
+        case paymentRequired(String)
+        /// The caller is authenticated but not permitted; the string preserves the supplied reason (403).
+        case forbidden(String)
         /// The request body exceeded the configured maximum (413).
         case payloadTooLarge
         /// A value could not be decoded from the request; the string names the value (422).
@@ -56,6 +58,7 @@ extension Server.Error {
         case .notFound: .notFound
         case .badRequest: .badRequest
         case .unauthorized: .unauthorized
+        case .paymentRequired: .paymentRequired
         case .forbidden: .forbidden
         case .payloadTooLarge: .contentTooLarge
         case .decoding: .unprocessableContent
@@ -70,10 +73,11 @@ extension Server.Error {
     /// A human-readable description of the failure condition.
     public var message: String {
         switch self {
-        case .notFound: "Not found"
+        case .notFound(let reason): reason
         case .badRequest(let reason): "Bad request: \(reason)"
         case .unauthorized: "Unauthorized"
-        case .forbidden: "Forbidden"
+        case .paymentRequired(let reason): reason
+        case .forbidden(let reason): reason
         case .payloadTooLarge: "Payload too large"
         case .decoding(let value): "Failed to decode \(value)"
         case .notImplemented(let reason): reason

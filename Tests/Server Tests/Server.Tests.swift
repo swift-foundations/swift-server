@@ -99,11 +99,56 @@ import Testing
 // MARK: - Error → status mapping
 
 @Test func `error Maps To Status`() {
-    #expect(Server.Error.notFound.status == .notFound)
+    #expect(Server.Error.notFound("Not Found").status == .notFound)
     #expect(Server.Error.unauthorized.status.code == 401)
     #expect(Server.Error.badRequest("bad").status == .badRequest)
     #expect(Server.Error.payloadTooLarge.status.code == 413)
     #expect(Server.Error.internalError("x").status == .internalServerError)
+}
+
+@Test func `not Found Preserves Reason And Maps To404`() {
+    let reason = "route /legacy no longer exists\n🙂"
+    let error = Server.Error.notFound(reason)
+
+    guard case .notFound(let payload) = error else {
+        Issue.record("Expected Server.Error.notFound")
+        return
+    }
+
+    #expect(payload == reason)
+    #expect(error.message == reason)
+    #expect(error.status == .notFound)
+    #expect(error.status.code == 404)
+}
+
+@Test func `payment Required Preserves Reason And Maps To402`() {
+    let reason = "subscription lapsed\n🙂"
+    let error = Server.Error.paymentRequired(reason)
+
+    guard case .paymentRequired(let payload) = error else {
+        Issue.record("Expected Server.Error.paymentRequired")
+        return
+    }
+
+    #expect(payload == reason)
+    #expect(error.message == reason)
+    #expect(error.status == .paymentRequired)
+    #expect(error.status.code == 402)
+}
+
+@Test func `forbidden Preserves Reason And Maps To403`() {
+    let reason = "role lacks admin scope\n🙂"
+    let error = Server.Error.forbidden(reason)
+
+    guard case .forbidden(let payload) = error else {
+        Issue.record("Expected Server.Error.forbidden")
+        return
+    }
+
+    #expect(payload == reason)
+    #expect(error.message == reason)
+    #expect(error.status == .forbidden)
+    #expect(error.status.code == 403)
 }
 
 @Test func `not Implemented Preserves Reason And Maps To501`() {

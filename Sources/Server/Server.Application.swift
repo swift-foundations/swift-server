@@ -64,7 +64,7 @@ extension Server {
             if let route = routes.last(where: { $0.method == request.method && $0.path == request.path }) {
                 return try await route.respond(request)
             }
-            guard let responder else { throw Server.Error.notFound }
+            guard let responder else { throw Server.Error.notFound("Not Found") }
             return try await responder(request)
         }
 
