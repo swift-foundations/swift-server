@@ -9,12 +9,14 @@ let package = Package(
     ],
     products: [
         .library(name: "Server", targets: ["Server"]),
+        .library(name: "Server HTML", targets: ["Server HTML"]),
         .library(name: "Server JSON", targets: ["Server JSON"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swift-standards/swift-http-standard.git", branch: "main"),
         .package(url: "https://github.com/swift-primitives/swift-byte-primitives.git", branch: "main"),
         .package(url: "https://github.com/swift-foundations/swift-environment.git", branch: "main"),
+        .package(url: "https://github.com/swift-foundations/swift-html-render.git", branch: "main"),
         .package(url: "https://github.com/swift-foundations/swift-json.git", branch: "main"),
         .package(url: "https://github.com/swift-foundations/swift-scheduler.git", branch: "main"),
     ],
@@ -29,6 +31,17 @@ let package = Package(
                 .product(name: "Scheduler", package: "swift-scheduler"),
             ],
             path: "Sources/Server"
+        ),
+
+        // MARK: - HTML integration
+
+        .target(
+            name: "Server HTML",
+            dependencies: [
+                "Server",
+                .product(name: "HTML Rendering Core", package: "swift-html-render"),
+            ],
+            path: "Sources/Server HTML"
         ),
 
         // MARK: - JSON integration
@@ -54,6 +67,16 @@ let package = Package(
             name: "Server Jobs Tests",
             dependencies: ["Server", .product(name: "Scheduler", package: "swift-scheduler")],
             path: "Tests/Server Jobs Tests"
+        ),
+        .testTarget(
+            name: "Server HTML Tests",
+            dependencies: [
+                "Server",
+                "Server HTML",
+                .product(name: "HTML Rendering Core", package: "swift-html-render"),
+                .product(name: "HTTP Standard", package: "swift-http-standard"),
+            ],
+            path: "Tests/Server HTML Tests"
         ),
         .testTarget(
             name: "Server JSON Tests",
