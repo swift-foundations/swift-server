@@ -9,10 +9,12 @@ let package = Package(
     ],
     products: [
         .library(name: "Server", targets: ["Server"]),
+        .library(name: "Server Dependencies", targets: ["Server Dependencies"]),
         .library(name: "Server HTML", targets: ["Server HTML"]),
         .library(name: "Server JSON", targets: ["Server JSON"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/swift-foundations/swift-dependencies.git", branch: "main"),
         .package(url: "https://github.com/swift-standards/swift-http-standard.git", branch: "main"),
         .package(url: "https://github.com/swift-primitives/swift-byte-primitives.git", branch: "main"),
         .package(url: "https://github.com/swift-foundations/swift-environment.git", branch: "main"),
@@ -31,6 +33,17 @@ let package = Package(
                 .product(name: "Scheduler", package: "swift-scheduler"),
             ],
             path: "Sources/Server"
+        ),
+
+        // MARK: - Dependencies integration (the `\.server.request` scope)
+
+        .target(
+            name: "Server Dependencies",
+            dependencies: [
+                "Server",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
+            path: "Sources/Server Dependencies"
         ),
 
         // MARK: - HTML integration
@@ -62,6 +75,16 @@ let package = Package(
             name: "Server Tests",
             dependencies: ["Server", .product(name: "HTTP Standard", package: "swift-http-standard")],
             path: "Tests/Server Tests"
+        ),
+        .testTarget(
+            name: "Server Dependencies Tests",
+            dependencies: [
+                "Server",
+                "Server Dependencies",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "HTTP Standard", package: "swift-http-standard"),
+            ],
+            path: "Tests/Server Dependencies Tests"
         ),
         .testTarget(
             name: "Server Jobs Tests",
