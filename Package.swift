@@ -9,10 +9,11 @@ let package = Package(
     ],
     products: [
         .library(name: "Server", targets: ["Server"]),
-        // Product name is deliberately unchanged: swift-foundations/boiler consumes
-        // `.product(name: "Server Dependencies", package: "swift-server")`. Only the
-        // target is renamed, which is what SwiftPM's conflict is actually about.
-        .library(name: "Server Dependencies", targets: ["Server Dependencies Integration"]),
+        // `Server Dependencies` is owned by swift-foundations/swift-server-dependencies
+        // (principal ruling 2026-07-28); this package gives the name up entirely, at
+        // product level as well as target level. Consumers move to
+        // `.product(name: "Server Dependencies Integration", package: "swift-server")`.
+        .library(name: "Server Dependencies Integration", targets: ["Server Dependencies Integration"]),
         .library(name: "Server HTML", targets: ["Server HTML"]),
         .library(name: "Server JSON", targets: ["Server JSON"]),
     ],
