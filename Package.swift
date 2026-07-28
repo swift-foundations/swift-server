@@ -9,7 +9,10 @@ let package = Package(
     ],
     products: [
         .library(name: "Server", targets: ["Server"]),
-        .library(name: "Server Dependencies", targets: ["Server Dependencies"]),
+        // Product name is deliberately unchanged: swift-foundations/boiler consumes
+        // `.product(name: "Server Dependencies", package: "swift-server")`. Only the
+        // target is renamed, which is what SwiftPM's conflict is actually about.
+        .library(name: "Server Dependencies", targets: ["Server Dependencies Integration"]),
         .library(name: "Server HTML", targets: ["Server HTML"]),
         .library(name: "Server JSON", targets: ["Server JSON"]),
     ],
@@ -38,7 +41,7 @@ let package = Package(
         // MARK: - Dependencies integration (the `\.server.request` scope)
 
         .target(
-            name: "Server Dependencies",
+            name: "Server Dependencies Integration",
             dependencies: [
                 "Server",
                 .product(name: "Dependencies", package: "swift-dependencies"),
@@ -77,10 +80,10 @@ let package = Package(
             path: "Tests/Server Tests"
         ),
         .testTarget(
-            name: "Server Dependencies Tests",
+            name: "Server Dependencies Integration Tests",
             dependencies: [
                 "Server",
-                "Server Dependencies",
+                "Server Dependencies Integration",
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "HTTP Standard", package: "swift-http-standard"),
             ],

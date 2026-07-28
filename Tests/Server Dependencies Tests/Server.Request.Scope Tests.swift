@@ -6,7 +6,7 @@
 import Dependencies
 import HTTP_Standard
 import Server
-import Server_Dependencies
+import Server_Dependencies_Integration
 import Testing
 
 extension Server.Request.Scope {
