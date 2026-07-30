@@ -5,7 +5,11 @@ import PackageDescription
 let package = Package(
     name: "swift-server",
     platforms: [
-        .macOS(.v26)
+        .macOS(.v26),
+        .iOS(.v26),
+        .tvOS(.v26),
+        .watchOS(.v26),
+        .visionOS(.v26),
     ],
     products: [
         .library(name: "Server", targets: ["Server"]),
