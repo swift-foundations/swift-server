@@ -41,6 +41,7 @@ import Testing
         switch error {
         case .decoding(let type):
             #expect(type == "String")
+
         default:
             Issue.record("Expected Server.Error.decoding, got \(error)")
         }

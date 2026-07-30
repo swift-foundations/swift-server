@@ -10,8 +10,8 @@
 // ===----------------------------------------------------------------------===//
 
 import Foundation
-import Server
 import HTTP_Standard
+import Server
 import Testing
 
 // A wire-shaped decoder mirroring the `{ success, data, message, timestamp }` envelope, used to

@@ -9,8 +9,8 @@
 //
 // ===----------------------------------------------------------------------===//
 
-import Server
 import HTTP_Standard
+import Server
 import Testing
 
 // MARK: - Status vocabulary

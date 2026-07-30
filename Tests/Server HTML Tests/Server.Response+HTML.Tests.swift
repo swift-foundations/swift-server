@@ -63,10 +63,11 @@ import Testing
 }
 
 @Test func `document HTML response exposes its typed rendering failure`() throws {
-    let render: (
-        HTML.Document<HTML.Text, HTML.Text>,
-        HTML.Context.Configuration?
-    ) throws(HTML.Context.Configuration.Error) -> Server.Response = Server.Response.html
+    let render:
+        (
+            HTML.Document<HTML.Text, HTML.Text>,
+            HTML.Context.Configuration?
+        ) throws(HTML.Context.Configuration.Error) -> Server.Response = Server.Response.html
     let document = HTML.Document {
         HTML.Text("Body")
     } head: {
