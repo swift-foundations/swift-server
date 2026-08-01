@@ -24,13 +24,6 @@ extension Server.Request {
     }
 }
 
-private enum ServerKey: Dependency.Key {}
-
-extension ServerKey {
-    static let liveValue = Server.Request.Scope()
-    static let testValue = Server.Request.Scope()
-}
-
 extension Dependency.Values {
     /// `@Dependency(\.server.request)` — the current request as the
     /// engine-free membrane type, or `nil` outside a request context.
