@@ -15,4 +15,3 @@ extension Server {
     /// Pure registration and dispatch support for the L3 Scheduler contracts.
     public enum Jobs {}
 }
-
